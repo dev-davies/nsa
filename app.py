@@ -154,7 +154,7 @@ def create_admin():
     password_hash = generate_password_hash(password)
     db = get_db()
     try:
-        # Default role for created admins is 'admin' (only master can promote via CLI for now safely)
+        
         db.execute('INSERT INTO admins (username, email, role, password_hash) VALUES (?, ?, ?, ?)',
                    (username, email, 'admin', password_hash))
         db.commit()
