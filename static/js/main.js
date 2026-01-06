@@ -146,10 +146,12 @@
     }
 
     // Scrolla Initialization
+    /*
     $('.animate').scrolla({
         mobile: false,
         once: false
     });
+    */
 
     // Refresh Waypoints
     $(window).on('load', function() {
