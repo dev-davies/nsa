@@ -151,5 +151,10 @@
         once: false
     });
 
+    // Refresh Waypoints
+    $(window).on('load', function() {
+        Waypoint.refreshAll();
+    });
+
 })(jQuery);
 
