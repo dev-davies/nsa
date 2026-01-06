@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Novelsolar Academy - where innovation meets sustainability!</title>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="Learning, Innovation, Sustainability, Education" name="keywords">
+    <meta content="Novelsolar Academy - where innovation meets sustainability!" name="description">
+
+    <!-- Favicon -->
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon-16x16.png') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='site.webmanifest') }}">
+
+    <!-- Google Web Fonts -->
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Jost:wght@500;600;700&family=Open+Sans:wght@400;600&display=swap"
+        rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
+
+    <!-- Libraries Stylesheet -->
+    <link href="{{ url_for('static', filename='lib/owlcarousel/assets/owl.carousel.min.css') }}" rel="stylesheet">
+
+    <!-- Customized Bootstrap Stylesheet -->
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+
+    <style>
+        /* SPA Loading and transition styles */
+        #page-content {
+            opacity: 1;
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        #page-content.loading {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .loader {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 9999;
+        }
+
+        .loader.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Smooth page transitions */
+        .page-content-wrapper {
+            min-height: 50vh;
+        }
+    </style>
+</head>
+
+<body>
+    {% include 'navbar.html' %}
+
+    <!-- Page Content Container -->
+    <div id="page-content" class="page-content-wrapper">
+        <!-- Dynamic content will be loaded here -->
+    </div>
+
+    {% include 'footer.html' %}
+
+    <!-- Loading Spinner -->
+    <div class="loader" id="page-loader">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Back to Top -->
+    <a href="#" class="btn btn-lg btn-primary rounded-0 btn-lg-square back-to-top"><i
+            class="fa fa-angle-double-up"></i></a>
+
+    <!-- JavaScript Libraries -->
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='lib/easing/easing.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='lib/waypoints/waypoints.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='lib/counterup/counterup.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='lib/owlcarousel/owl.carousel.min.js') }}"></script>
+
+    <!-- SPA Router and Content Loader -->
+    <script>
+        // Cache for loaded pages to reduce server requests
+        const pageCache = {};
+        const contentDiv = document.getElementById('page-content');
+        const loader = document.getElementById('page-loader');
+
+        // Page routing configuration
+        const routes = {
+            '': 'home',
+            '/': 'home',
+            '/home': 'home',
+            '/courses': 'courses',
+            '/registration': 'registration',
+            '/testimonial': 'testimonial',
+            '/course/solar-design-installation': 'solar-design-installation',
+            '/course/solarpreneurship': 'solarpreneurship',
+            '/course/repair-maintenance': 'repair-maintenance',
+            '/course/hse-management': 'hse-management',
+            '/course/ai-robotics': 'ai-robotics',
+            '/course/web-development': 'web-development',
+            '/course/digital-marketing': 'digital-marketing',
+        };
+
+        // Load page content dynamically
+        async function loadPage(pathname) {
+            const page = routes[pathname] || 'home';
+            
+            // Check cache first
+            if (pageCache[page]) {
+                renderPage(pageCache[page]);
+                return;
+            }
+
+            // Show loader
+            loader.classList.add('active');
+            contentDiv.classList.add('loading');
+
+            try {
+                let endpoint;
+                if (page.startsWith('course-') || (pathname && pathname.startsWith('/course/'))) {
+                    const courseSlug = pathname.replace('/course/', '');
+                    endpoint = `/api/course/${courseSlug}`;
+                } else {
+                    endpoint = `/api/page/${page}`;
+                }
+
+                const response = await fetch(endpoint);
+                if (!response.ok) throw new Error('Failed to load page');
+                
+                const data = await response.json();
+                
+                // Cache the content
+                pageCache[page] = data.content;
+                
+                // Render the content
+                renderPage(data.content);
+
+                // Update browser history
+                window.history.pushState({ page }, `Novelsolar Academy - ${page}`, pathname || '/');
+            } catch (error) {
+                contentDiv.innerHTML = `<div class="container mt-5"><div class="alert alert-danger">Error loading page: ${error.message}</div></div>`;
+                console.error('Page load error:', error);
+            } finally {
+                loader.classList.remove('active');
+                contentDiv.classList.remove('loading');
+            }
+        }
+
+        // Render content to page
+        function renderPage(content) {
+            contentDiv.innerHTML = content;
+            
+            // Reinitialize scripts that need to run on page load
+            if (typeof $ !== 'undefined') {
+                // Reinitialize Bootstrap tooltips, popovers, etc.
+                $('[data-toggle="tooltip"]').tooltip();
+                $('[data-toggle="popover"]').popover();
+                
+                // Reinitialize Owl Carousel
+                $('.owl-carousel').owlCarousel();
+                
+                // Reinitialize counter-up if present
+                if (typeof $.fn.counterUp !== 'undefined') {
+                    $('.counter').counterUp({
+                        delay: 10,
+                        time: 1000
+                    });
+                }
+            }
+            
+            // Scroll to top
+            window.scrollTo(0, 0);
+        }
+
+        // Navigation handler - intercept navbar links
+        document.addEventListener('click', function(e) {
+            const link = e.target.closest('a');
+            if (!link) return;
+
+            const href = link.getAttribute('href');
+            
+            // Only handle internal navigation
+            if (href && href.startsWith('/') && !href.startsWith('//') && !href.includes('admin') && !href.includes('register')) {
+                e.preventDefault();
+                loadPage(href);
+            }
+        });
+
+        // Handle browser back/forward buttons
+        window.addEventListener('popstate', function(e) {
+            const page = e.state?.page || 'home';
+            loadPage(location.pathname);
+        });
+
+        // Initial page load
+        window.addEventListener('load', function() {
+            loadPage(window.location.pathname);
+        });
+    </script>
+
+    <!-- Template Javascript -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+
+</html>

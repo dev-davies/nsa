@@ -23,62 +23,95 @@ def close_connection(exception):
     if db is not None:
         db.close()
 
+# Main entry point - serves single-page app shell
 @app.route("/")
 def home():
-    return render_template("index.html")
+    return render_template("app.html")
 
-@app.route("/about")
-def about():
-    return render_template("about.html")
+# API endpoints to fetch page content dynamically
+@app.route("/api/page/<page_name>")
+def get_page(page_name):
+    """Fetch page content as JSON for SPA loading"""
+    pages = {
+        'home': 'index.html',
+        'courses': 'course.html',
+        'testimonial': 'testimonial.html',
+    }
+    
+    if page_name not in pages:
+        return jsonify({"error": "Page not found"}), 404
+    
+    try:
+        content = render_template(f"pages/{pages[page_name]}")
+        return jsonify({"content": content, "page": page_name})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
+# Course detail endpoints - also serve via API
+@app.route("/api/course/<course_slug>")
+def get_course(course_slug):
+    """Fetch course content dynamically"""
+    course_map = {
+        'solar-design-installation': ('solar-design-installation.html', 'Solar Design & Installation'),
+        'solarpreneurship': ('solarpreneurship.html', 'Solarpreneurship'),
+        'repair-maintenance': ('repair-maintenance.html', 'Repair & Maintenance'),
+        'hse-management': ('hse-management.html', 'HSE Management'),
+        'ai-robotics': ('ai-robotics.html', 'AI & Robotics'),
+        'web-development': ('web-development.html', 'Web Development'),
+        'digital-marketing': ('digital-marketing.html', 'Digital Marketing'),
+    }
+    
+    if course_slug not in course_map:
+        return jsonify({"error": "Course not found"}), 404
+    
+    try:
+        template_file, course_name = course_map[course_slug]
+        content = render_template(f"pages/{template_file}")
+        return jsonify({"content": content, "page": f"course-{course_slug}", "title": course_name})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# Traditional routes for direct access and backwards compatibility
 @app.route("/courses")
 def courses():
-    return render_template("course.html")
-
-@app.route("/team")
-def team():
-    return render_template("team.html")
+    return render_template("index.html")
 
 @app.route("/registration")
 def registration():
-    return render_template("registration.html")
-
-@app.route("/features")
-def info_features():
-    return render_template("feature.html")
+    return render_template("index.html")
 
 @app.route("/testimonial")
 def info_testimonial():
-    return render_template("testimonial.html")
+    return render_template("index.html")
 
-# Course Details
+# Course Details - redirect to SPA
 @app.route("/course/solar-design-installation")
 def solar_design_installation():
-    return render_template("solar-design-installation.html")
+    return render_template("index.html")
 
 @app.route("/course/solarpreneurship")
 def solarpreneurship():
-    return render_template("solarpreneurship.html")
+    return render_template("index.html")
 
 @app.route("/course/repair-maintenance")
 def repair_maintenance():
-    return render_template("repair-maintenance.html")
+    return render_template("index.html")
 
 @app.route("/course/hse-management")
 def hse_management():
-    return render_template("hse-management.html")
+    return render_template("index.html")
 
 @app.route("/course/ai-robotics")
 def ai_robotics():
-    return render_template("ai-robotics.html")
+    return render_template("index.html")
 
 @app.route("/course/web-development")
 def web_development():
-    return render_template("web-development.html")
+    return render_template("index.html")
 
 @app.route("/course/digital-marketing")
 def digital_marketing():
-    return render_template("digital-marketing.html")
+    return render_template("index.html")
 
 @app.route("/admin/login", methods=["GET", "POST"])
 def admin_login():
