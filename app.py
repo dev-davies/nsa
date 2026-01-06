@@ -232,7 +232,7 @@ def reset_password(token):
 
     return render_template("reset_password.html", token=token)
 
-# Contact Form Submission (Placeholder)
+# Contact Form Submission
 @app.route("/submit_contact", methods=["POST"])
 def submit_contact():
     name = request.form.get("name")
