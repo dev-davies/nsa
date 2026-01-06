@@ -14,7 +14,6 @@ CREATE TABLE registrations (
     course TEXT NOT NULL,
     level TEXT NOT NULL,
     qualification TEXT,
-    shift TEXT NOT NULL,
     goals TEXT,
     experience TEXT,
     info_source TEXT,
