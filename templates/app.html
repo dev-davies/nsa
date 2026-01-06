@@ -186,7 +186,12 @@
                 
                 // Reinitialize counter-up if present
                 if (typeof $.fn.counterUp !== 'undefined') {
-                    $('.counter').counterUp({
+                    // Reset counters to 0 before counting up
+                    $('[data-toggle="counter-up"]').each(function() {
+                        $(this).text('0');
+                    });
+                    // Trigger counter animation
+                    $('[data-toggle="counter-up"]').counterUp({
                         delay: 10,
                         time: 1000
                     });
