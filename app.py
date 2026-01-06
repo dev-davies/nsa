@@ -1,10 +1,11 @@
 import sqlite3
+import os
 from flask import Flask, render_template, request, flash, redirect, url_for, jsonify, g, session
 from werkzeug.security import check_password_hash, generate_password_hash
 from itsdangerous import URLSafeTimedSerializer
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key_here'  # Required for flashing messages
+app.secret_key = os.environ.get('SECRET_KEY', 'dev-key-change-in-production')  # Required for flashing messages
 s = URLSafeTimedSerializer(app.secret_key)
 
 DATABASE = 'database.db'
@@ -281,4 +282,4 @@ def submit_registration():
     return redirect(url_for('thank_you'))
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=os.environ.get('FLASK_DEBUG', False))
