@@ -270,18 +270,19 @@ def submit_registration():
         return jsonify({"status": "success", "message": "Registration received", "redirect": "/thank-you"})
     
     # Fallback for standard form submission (if JS fails or is disabled)
+    # Match the field names to what registration.html actually sends
     full_name = request.form.get("fullName")
     email = request.form.get("email")
-    phone = request.form.get("phone")
+    phone = request.form.get("phoneNumber")  # Changed from "phone" to "phoneNumber"
     dob = request.form.get("dob")
     address = request.form.get("address")
     sex = request.form.get("sex")
     nationality = request.form.get("nationality")
     state = request.form.get("state")
     course = request.form.get("course")
-    level = request.form.get("level")
+    level = request.form.get("educationLevel")  # Changed from "level" to "educationLevel"
     qualification = request.form.get("qualification")
-    goals = request.form.get("goals")
+    goals = request.form.get("courseGoals")  # Changed from "goals" to "courseGoals"
     experience = request.form.get("experience")
     info_source = request.form.get("infoSource")
 
@@ -293,6 +294,7 @@ def submit_registration():
     db.commit()
     print(f"Registration Submission Saved (Form): {full_name}")
     return redirect('/thank-you')
+
 
 # Unified route to serve SPA shell for all frontend paths
 @app.route("/", defaults={'path': ''})

@@ -203,6 +203,12 @@
                 }
             }
             
+            // Initialize registration page if it's loaded
+            if (typeof window.initializeRegistration === 'function') {
+                console.log("Initializing registration page functionality");
+                window.initializeRegistration();
+            }
+            
             // Scroll to top
             window.scrollTo(0, 0);
         }
