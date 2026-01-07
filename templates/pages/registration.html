@@ -406,7 +406,11 @@
                         .then(response => response.json())
                         .then(result => {
                             if (result.redirect) {
-                                window.location.href = result.redirect;
+                                if (typeof window.loadPage === 'function') {
+                                    window.loadPage(result.redirect);
+                                } else {
+                                    window.location.href = result.redirect;
+                                }
                             } else {
                                 showFeedback('success', 'Registration submitted successfully! We will contact you soon.');
                                 setTimeout(() => {

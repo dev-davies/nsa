@@ -267,7 +267,7 @@ def submit_registration():
         db.commit()
         print(f"Registration Submission Saved (JSON): {data.get('fullName')}")
         # Return redirect URL for JS to handle
-        return jsonify({"status": "success", "message": "Registration received", "redirect": url_for('thank_you')})
+        return jsonify({"status": "success", "message": "Registration received", "redirect": "/thank-you"})
     
     # Fallback for standard form submission (if JS fails or is disabled)
     full_name = request.form.get("fullName")
@@ -292,7 +292,7 @@ def submit_registration():
                (full_name, email, phone, dob, address, sex, nationality, state, course, level, qualification, goals, experience, info_source))
     db.commit()
     print(f"Registration Submission Saved (Form): {full_name}")
-    return redirect(url_for('thank_you'))
+    return redirect('/thank-you')
 
 # Unified route to serve SPA shell for all frontend paths
 @app.route("/", defaults={'path': ''})

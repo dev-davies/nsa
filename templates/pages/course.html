@@ -3,7 +3,7 @@
         <div class="container text-center py-5">
             <h1 class="text-white display-1">Courses</h1>
             <div class="d-inline-flex text-white mb-5">
-                <p class="m-0 text-uppercase"><a class="text-white" href="">Home</a></p>
+                <p class="m-0 text-uppercase"><a class="text-white" href="/" onclick="loadPage('home'); return false;">Home</a></p>
                 <i class="fa fa-angle-double-right pt-1 px-3"></i>
                 <p class="m-0 text-uppercase">Courses</p>
             </div>
@@ -32,7 +32,7 @@
                             <h5 class="card-title">Solar Design & Installation</h5>
                             <p class="card-text">Hands-on training to design and install residential & commercial solar
                                 systems.</p>
-                            <a href="{{ url_for('get_course', course_slug='solar-design-installation') }}" class="btn btn-primary" onclick="loadPage('/course/solar-design-installation'); return false;">More</a>
+                            <a href="/course/solar-design-installation" class="btn btn-primary" onclick="loadPage('/course/solar-design-installation'); return false;">More</a>
                         </div>
                     </div>
                 </div>
@@ -44,7 +44,7 @@
                         <div class="card-body">
                             <h5 class="card-title">Solarpreneurship</h5>
                             <p class="card-text">Learn how to start and grow a profitable solar energy business.</p>
-                            <a href="{{ url_for('get_course', course_slug='solarpreneurship') }}" class="btn btn-primary" onclick="loadPage('/course/solarpreneurship'); return false;">More</a>
+                            <a href="/course/solarpreneurship" class="btn btn-primary" onclick="loadPage('/course/solarpreneurship'); return false;">More</a>
                         </div>
                     </div>
                 </div>
@@ -57,7 +57,7 @@
                             <h5 class="card-title">Repair & Maintenance</h5>
                             <p class="card-text">Practical skills for diagnosing, repairing and maintaining solar
                                 systems.</p>
-                            <a href="{{ url_for('get_course', course_slug='repair-maintenance') }}" class="btn btn-primary" onclick="loadPage('/course/repair-maintenance'); return false;">More</a>
+                            <a href="/course/repair-maintenance" class="btn btn-primary" onclick="loadPage('/course/repair-maintenance'); return false;">More</a>
                         </div>
                     </div>
                 </div>
@@ -70,7 +70,7 @@
                             <h5 class="card-title">HSE Management</h5>
                             <p class="card-text">Essential health, safety and environment practices for project sites.
                             </p>
-                            <a href="{{ url_for('get_course', course_slug='hse-management') }}" class="btn btn-primary" onclick="loadPage('/course/hse-management'); return false;">More</a>
+                            <a href="/course/hse-management" class="btn btn-primary" onclick="loadPage('/course/hse-management'); return false;">More</a>
                         </div>
                     </div>
                 </div>
@@ -83,7 +83,7 @@
                             <h5 class="card-title">AI & Robotics</h5>
                             <p class="card-text">Build practical AI and robotics projects for automation and controls.
                             </p>
-                            <a href="{{ url_for('get_course', course_slug='ai-robotics') }}" class="btn btn-primary" onclick="loadPage('/course/ai-robotics'); return false;">More</a>
+                            <a href="/course/ai-robotics" class="btn btn-primary" onclick="loadPage('/course/ai-robotics'); return false;">More</a>
                         </div>
                     </div>
                 </div>
@@ -95,7 +95,7 @@
                         <div class="card-body">
                             <h5 class="card-title">Web Design & Development</h5>
                             <p class="card-text">Learn to design and develop responsive, modern websites and apps.</p>
-                            <a href="{{ url_for('get_course', course_slug='web-development') }}" class="btn btn-primary" onclick="loadPage('/course/web-development'); return false;">More</a>
+                            <a href="/course/web-development" class="btn btn-primary" onclick="loadPage('/course/web-development'); return false;">More</a>
                         </div>
                     </div>
                 </div>
@@ -107,13 +107,13 @@
                         <div class="card-body">
                             <h5 class="card-title">Digital Marketing</h5>
                             <p class="card-text">Practical digital marketing skills to grow brands online.</p>
-                            <a href="{{ url_for('get_course', course_slug='digital-marketing') }}" class="btn btn-primary" onclick="loadPage('/course/digital-marketing'); return false;">More</a>
+                            <a href="/course/digital-marketing" class="btn btn-primary" onclick="loadPage('/course/digital-marketing'); return false;">More</a>
                         </div>
                     </div>
                 </div>
 
                 <div class="col-12 text-center">
-                    <a href="{{ url_for('home') }}" class="btn btn-lg btn-success mt-3" onclick="loadPage('/registration'); return false;">Register for a
+                    <a href="/registration" class="btn btn-lg btn-success mt-3" onclick="loadPage('registration'); return false;">Register for a
                         Course</a>
                 </div>
             </div>
