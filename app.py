@@ -97,7 +97,7 @@ def admin_login():
         else:
             flash("Invalid username or password.", "error")
             
-    return render_template("admin_login.html")
+    return render_template("admin/login.html")
 
 @app.route("/admin/logout")
 def admin_logout():
@@ -117,7 +117,7 @@ def admin_dashboard():
     registrations = db.execute('SELECT id, full_name, course, submitted_at FROM registrations ORDER BY submitted_at DESC').fetchall()
     messages = db.execute('SELECT * FROM messages ORDER BY submitted_at DESC').fetchall()
     admins = db.execute('SELECT * FROM admins').fetchall() 
-    return render_template("admin_dashboard.html", registrations=registrations, messages=messages, admins=admins)
+    return render_template("admin/dashboard.html", registrations=registrations, messages=messages, admins=admins)
 
 @app.route("/admin/registration/<int:reg_id>")
 def registration_details(reg_id):
@@ -131,7 +131,7 @@ def registration_details(reg_id):
         flash("Registration not found.", "error")
         return redirect(url_for('admin_dashboard'))
         
-    return render_template("registration_details.html", registration=registration)
+    return render_template("admin/registration_details.html", registration=registration)
 
 @app.route("/admin/create", methods=["POST"])
 def create_admin():
@@ -205,7 +205,7 @@ def forgot_password():
         else:
             flash("Email not found.", "error")
             
-    return render_template("forgot_password.html")
+    return render_template("admin/forgot_password.html")
 
 @app.route("/admin/reset-password/<token>", methods=["GET", "POST"])
 def reset_password(token):
@@ -230,7 +230,7 @@ def reset_password(token):
         flash("Your password has been reset successfully. Please login.", "success")
         return redirect(url_for('admin_login'))
 
-    return render_template("reset_password.html", token=token)
+    return render_template("admin/reset_password.html", token=token)
 
 # Contact Form Submission
 @app.route("/submit_contact", methods=["POST"])
@@ -252,7 +252,7 @@ def submit_contact():
 
 @app.route("/thank-you")
 def thank_you():
-    return render_template("thank_you.html")
+    return render_template("pages/thank_you.html")
 
 @app.route("/submit_registration", methods=["POST"])
 def submit_registration():

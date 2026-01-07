@@ -76,14 +76,14 @@
 </head>
 
 <body>
-    {% include 'navbar.html' %}
+    {% include 'includes/navbar.html' %}
 
     <!-- Page Content Container -->
     <div id="page-content" class="page-content-wrapper">
-        <!-- Dynamic content will be loaded here -->
+        <!-- Dynamic content will be here -->
     </div>
 
-    {% include 'footer.html' %}
+    {% include 'includes/footer.html' %}
 
     <!-- Loading Spinner -->
     <div class="loader" id="page-loader">
@@ -128,7 +128,14 @@
 
         // Load page content dynamically
         async function loadPage(pathname) {
-            const page = routes[pathname] || 'home';
+            // Normalize path: remove trailing slash if present (unless it's root '/')
+            let normalizedPath = pathname;
+            if (normalizedPath.length > 1 && normalizedPath.endsWith('/')) {
+                normalizedPath = normalizedPath.slice(0, -1);
+            }
+            
+            const page = routes[normalizedPath] || 'home';
+            console.log(`Loading page: ${page} (path: ${pathname} -> ${normalizedPath})`);
             
             // Check cache first
             if (pageCache[page]) {
@@ -142,18 +149,25 @@
 
             try {
                 let endpoint;
-                if (page.startsWith('course-') || (pathname && pathname.startsWith('/course/'))) {
-                    const courseSlug = pathname.replace('/course/', '');
+                if (page.startsWith('course-') || (normalizedPath && normalizedPath.startsWith('/course/'))) {
+                    const courseSlug = normalizedPath.replace('/course/', '');
                     endpoint = `/api/course/${courseSlug}`;
                 } else {
                     endpoint = `/api/page/${page}`;
                 }
 
+                console.log(`Fetching endpoint: ${endpoint}`);
                 const response = await fetch(endpoint);
-                if (!response.ok) throw new Error('Failed to load page');
+                if (!response.ok) {
+                    throw new Error(`Failed to load page: ${response.status} ${response.statusText}`);
+                }
                 
                 const data = await response.json();
                 
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
                 // Cache the content
                 pageCache[page] = data.content;
                 
@@ -161,9 +175,11 @@
                 renderPage(data.content);
 
                 // Update browser history
-                window.history.pushState({ page }, `Novelsolar Academy - ${page}`, pathname || '/');
+                if (window.location.pathname !== pathname) {
+                    window.history.pushState({ page }, `Novelsolar Academy - ${page}`, pathname || '/');
+                }
             } catch (error) {
-                contentDiv.innerHTML = `<div class="container mt-5"><div class="alert alert-danger">Error loading page: ${error.message}</div></div>`;
+                contentDiv.innerHTML = `<div class="container mt-5"><div class="alert alert-danger">Error loading page: ${error.message} <br> <a href="/" class="btn btn-primary mt-3">Return Home</a></div></div>`;
                 console.error('Page load error:', error);
             } finally {
                 loader.classList.remove('active');
@@ -177,24 +193,12 @@
             
             // Reinitialize scripts that need to run on page load
             if (typeof $ !== 'undefined') {
-                // Reinitialize Bootstrap tooltips, popovers, etc.
-                $('[data-toggle="tooltip"]').tooltip();
-                $('[data-toggle="popover"]').popover();
-                
-                // Reinitialize Owl Carousel
-                $('.owl-carousel').owlCarousel();
-                
-                // Reinitialize counter-up if present
-                if (typeof $.fn.counterUp !== 'undefined') {
-                    // Reset counters to 0 before counting up
-                    $('[data-toggle="counter-up"]').each(function() {
-                        $(this).text('0');
-                    });
-                    // Trigger counter animation
-                    $('[data-toggle="counter-up"]').counterUp({
-                        delay: 10,
-                        time: 1000
-                    });
+                // Reinitialize scripts via global function from main.js
+                if (window.initializeSiteScripts) {
+                    window.initializeSiteScripts();
+                } else {
+                     // Fallback if main.js hasn't loaded (shouldn't happen)
+                     console.warn("initializeSiteScripts not found");
                 }
             }
             
