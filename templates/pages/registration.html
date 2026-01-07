@@ -1,39 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="utf-8">
-    <title>Student Registration - Novelsolar Academy</title>
-    <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <meta content="Learning, Innovation, Sustainability, Education" name="keywords">
-    <meta content="Novelsolar Academy - Student Registration" name="description">
-
-    <!-- Favicon -->
-    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
-    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32x32.png') }}">
-    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon-16x16.png') }}">
-    <link rel="manifest" href="{{ url_for('static', filename='site.webmanifest') }}">
-
-    <!-- Google Web Fonts -->
-    <link rel="preconnect" href="https://fonts.gstatic.com">
-    <link
-        href="https://fonts.googleapis.com/css2?family=Jost:wght@500;600;700&family=Open+Sans:wght@400;600&display=swap"
-        rel="stylesheet">
-
-    <!-- Font Awesome -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
-
-    <!-- Libraries Stylesheet -->
-    <link href="{{ url_for('static', filename='lib/owlcarousel/assets/owl.carousel.min.css') }}" rel="stylesheet">
-
-    <!-- Customized Bootstrap Stylesheet -->
-    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
-</head>
-
-<body>
-    {% include 'navbar.html' %}
-
-    <!-- Registration Container Start -->
+<!-- Registration Container Start -->
     <div class="registration-container">
         <div class="registration-form-wrapper">
             <h1><i class="fa fa-user-check mr-2"></i>Student Registration</h1>
@@ -209,7 +174,7 @@
                     <label>
                         <input type="checkbox" id="terms" name="terms" required>
                         <span class="ml-2">I agree to the Terms and Conditions and Privacy Policy <span
-                                class="required">*</span></span>
+                            class="required">*</span></span>
                     </label>
                 </div>
 
@@ -222,88 +187,6 @@
         </div>
     </div>
     <!-- Registration Container End -->
-
-    <!-- Footer Start -->
-    <div class="container-fluid position-relative overlay-top bg-dark text-white-50 py-5" style="margin-top: 90px;">
-        <div class="container mt-5 pt-5">
-            <div class="row">
-                <div class="col-md-8 offset-md-4 mb-5">
-                    <a href="{{ url_for('home') }}" class="navbar-brand">
-                        <h4 class="mt-n2 text-uppercase text-white"><i class="fa fa-book-reader mr-3"></i>Novelsolar
-                            Academy</h4>
-                    </a>
-                    <p class="m-0">Where innovation meets sustainability!</p>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-4 mb-5">
-                    <h3 class="text-white mb-4">Get In Touch</h3>
-                    <p><i class="fa fa-map-marker-alt mr-2"></i>76, Adekunle Fajuyi Road Ibadan.
-                        Opposite Gate 3, Adamasingba Stadium, Ibadan Oyo State</p>
-                    <p><i class="fa fa-phone-alt mr-2"></i>+234 8113695917</p>
-                    <p><i class="fa fa-envelope mr-2"></i>novelsolaracademy@gmail.com</p>
-                    <div class="d-flex justify-content-start mt-4">
-                        <a class="text-white mr-4" href="#"><i class="fab fa-2x fa-twitter"></i></a>
-                        <a class="text-white mr-4" href="#"><i class="fab fa-2x fa-facebook-f"></i></a>
-                        <a class="text-white mr-4" href="#"><i class="fab fa-2x fa-linkedin-in"></i></a>
-                        <a class="text-white" href="#"><i class="fab fa-2x fa-instagram"></i></a>
-                    </div>
-                </div>
-                <div class="col-md-4 mb-5">
-                    <h3 class="text-white mb-4">Our Courses</h3>
-                    <div class="d-flex flex-column justify-content-start">
-                        <a class="text-white-50 mb-2" href="#"><i class="fa fa-angle-right mr-2"></i>Web Design</a>
-                        <a class="text-white-50 mb-2" href="#"><i class="fa fa-angle-right mr-2"></i>Solar Energy</a>
-                        <a class="text-white-50 mb-2" href="#"><i class="fa fa-angle-right mr-2"></i>Digital
-                            Marketing</a>
-                        <a class="text-white-50 mb-2" href="#"><i class="fa fa-angle-right mr-2"></i>Robotics</a>
-                        <a class="text-white-50" href="#"><i class="fa fa-angle-right mr-2"></i>HSE Management</a>
-                    </div>
-                </div>
-                <div class="col-md-4 mb-5">
-                    <h3 class="text-white mb-4">Quick Links</h3>
-                    <div class="d-flex flex-column justify-content-start">
-                        <a class="text-white-50 mb-2" href="#"><i class="fa fa-angle-right mr-2"></i>Privacy Policy</a>
-                        <a class="text-white-50 mb-2" href="#"><i class="fa fa-angle-right mr-2"></i>Terms &
-                            Condition</a>
-                        <a class="text-white-50 mb-2" href="#"><i class="fa fa-angle-right mr-2"></i>Regular FAQs</a>
-                        <a class="text-white-50 mb-2" href="#"><i class="fa fa-angle-right mr-2"></i>Help & Support</a>
-                        <a class="text-white-50" href="#"><i class="fa fa-angle-right mr-2"></i>Contact</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="container-fluid bg-dark text-white-50 border-top py-4"
-        style="border-color: rgba(256, 256, 256, .1) !important;">
-        <div class="container">
-            <div class="row">
-                <div class="col-md-6 text-center text-md-left mb-3 mb-md-0">
-                    <p class="m-0">Copyright &copy; <a class="text-white" href="#">Novelsolar Academy</a>. All Rights
-                        Reserved.</p>
-                </div>
-                <div class="col-md-6 text-center text-md-right">
-                    <p class="m-0">Designed by <a class="text-white" href="#">Novelsolar Academy</a></p>
-                </div>
-            </div>
-        </div>
-    </div>
-    <!-- Footer End -->
-
-    <!-- Back to Top -->
-    <a href="#" class="btn btn-lg btn-primary rounded-0 btn-lg-square back-to-top"><i
-            class="fa fa-angle-double-up"></i></a>
-
-    <!-- JavaScript Libraries -->
-    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
-    <script src="{{ url_for('static', filename='lib/easing/easing.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='lib/waypoints/waypoints.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='lib/counterup/counterup.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='lib/owlcarousel/owl.carousel.min.js') }}"></script>
-
-    <!-- Template Javascript -->
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 
     <!-- Registration Form Handling -->
     <script>
@@ -379,15 +262,24 @@
             { name: "Zimbabwe", code: "+263" }
         ];
 
-        document.addEventListener('DOMContentLoaded', function () {
-            const nationalitySearch = document.getElementById('nationalitySearch');
-            const nationalitySelect = document.getElementById('nationality');
-            const nationalityDropdown = document.getElementById('nationalityDropdown');
-            const registrationForm = document.getElementById('registrationForm');
-            const formInputs = registrationForm.querySelectorAll('input, select, textarea');
-            const feedbackDiv = document.getElementById('formFeedback');
+        // This script will NOT run automatically from innerHTML injection by default in modern browsers or if not handled by app.html.
+        // Needs a strategy to run it.
+        // For now, we keep it here.
+        
+        // We can expose an init function:
+        window.initializeRegistration = function() {
+              const nationalitySearch = document.getElementById('nationalitySearch');
+              const nationalitySelect = document.getElementById('nationality');
+              const nationalityDropdown = document.getElementById('nationalityDropdown');
+              const registrationForm = document.getElementById('registrationForm');
+              
+              if (!registrationForm) return; // Guard clause
+              
+              const formInputs = registrationForm.querySelectorAll('input, select, textarea');
+              const feedbackDiv = document.getElementById('formFeedback');
 
             // Initialize country dropdown options
+            nationalitySelect.innerHTML = '<option value="">-- Select a Country --</option>'; // Reset
             countries.forEach(country => {
                 const option = document.createElement('option');
                 option.value = country.name;
@@ -414,7 +306,6 @@
                     item.className = 'country-item';
                     item.textContent = country.name;
                     item.addEventListener('click', function (e) {
-                        // Stop propagation to prevent immediate closing by document click listener
                         e.stopPropagation();
                         updateCountry(country);
                     });
@@ -425,6 +316,8 @@
             }
 
             // Event Listeners
+            // Remove old listeners to avoid duplicates if re-run?? No, elements are new.
+            
             nationalitySearch.addEventListener('input', function () {
                 showDropdown(this.value);
             });
@@ -434,7 +327,7 @@
             });
 
             nationalitySearch.addEventListener('click', function (e) {
-                e.stopPropagation(); // Prevent document click from closing immediately
+                e.stopPropagation(); 
                 showDropdown(this.value);
             });
 
@@ -449,14 +342,16 @@
                 const phoneInput = document.getElementById('phoneNumber');
                 if (countryObj.code) {
                     phoneInput.value = countryObj.code + " ";
-                    phoneInput.focus(); // Focus to let user type number
+                    phoneInput.focus();
                 }
             }
 
             // Close dropdown when clicking outside
+            // This is global, so it might pile up. Better to attach to the wrapper or use a named function.
+            // But for now:
             document.addEventListener('click', function (e) {
                 if (e.target !== nationalitySearch && e.target !== nationalityDropdown) {
-                    nationalityDropdown.style.display = 'none';
+                    if(nationalityDropdown) nationalityDropdown.style.display = 'none';
                 }
             });
 
@@ -498,11 +393,10 @@
                     // Collect form data
                     const formData = new FormData(registrationForm);
                     const data = Object.fromEntries(formData.entries());
-                    // Handle checkbox manually
                     data.terms = document.getElementById('terms').checked;
 
                     // Send to backend
-                    fetch("{{ url_for('submit_registration') }}", {
+                    fetch("/submit_registration", { // Hardcoded URL or use template var if processed
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
@@ -514,15 +408,11 @@
                             if (result.redirect) {
                                 window.location.href = result.redirect;
                             } else {
-                                // Show success message (fallback)
                                 showFeedback('success', 'Registration submitted successfully! We will contact you soon.');
-
-                                // Reset form after 3 seconds
                                 setTimeout(() => {
                                     registrationForm.reset();
                                     nationalitySearch.value = '';
-                                    nationalityDropdown.innerHTML = '';
-                                    nationalityDropdown.style.display = 'none';
+                                    if(nationalityDropdown) nationalityDropdown.style.display = 'none';
                                     feedbackDiv.classList.remove('success', 'error');
                                     feedbackDiv.style.display = 'none';
                                 }, 3000);
@@ -543,12 +433,10 @@
 
                 clearFieldError(field);
 
-                // Validate required fields
                 if (!value && field.hasAttribute('required')) {
                     showFieldError(field, 'This field is required');
                     isValid = false;
                 } else if (value) {
-                    // Email validation
                     if (type === 'email') {
                         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                         if (!emailRegex.test(value)) {
@@ -556,22 +444,18 @@
                             isValid = false;
                         }
                     }
-                    // Phone validation (basic)
                     else if (name === 'phoneNumber' && value.length < 10) {
                         showFieldError(field, 'Please enter a valid phone number');
                         isValid = false;
                     }
-                    // Name validation
                     else if (name === 'fullName' && value.length < 3) {
                         showFieldError(field, 'Name must be at least 3 characters');
                         isValid = false;
                     }
-                    // State validation
                     else if (name === 'state' && value.length < 2) {
                         showFieldError(field, 'Please enter a valid state');
                         isValid = false;
                     }
-                    // Course goals validation
                     else if (name === 'courseGoals' && value.length < 10) {
                         showFieldError(field, 'Please provide more details about your goals');
                         isValid = false;
@@ -602,8 +486,14 @@
                 feedbackDiv.className = `form-feedback ${type}`;
                 feedbackDiv.textContent = message;
             }
-        });
-    </script>
-</body>
+        }; // End window.initializeRegistration
 
-</html>
+        // Auto-run if possible (though innerHTML won't run this script tag usually)
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+             if(window.initializeRegistration) window.initializeRegistration();
+        } else {
+            document.addEventListener('DOMContentLoaded', function() {
+                 if(window.initializeRegistration) window.initializeRegistration();
+            });
+        }
+    </script>

@@ -36,6 +36,7 @@ PAGE_MAP = {
     'courses': 'course.html',
     'testimonial': 'testimonial.html',
     'registration': 'registration.html',
+    'thank-you': 'thank_you.html',
 }
 
 COURSE_MAP = {
@@ -250,9 +251,6 @@ def submit_contact():
     flash("Your message has been sent successfully!", "success")
     return redirect(url_for('home'))
 
-@app.route("/thank-you")
-def thank_you():
-    return render_template("pages/thank_you.html")
 
 @app.route("/submit_registration", methods=["POST"])
 def submit_registration():

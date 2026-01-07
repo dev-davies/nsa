@@ -128,7 +128,7 @@
 
         // Load page content dynamically
         async function loadPage(pathname) {
-            // Normalize path: remove trailing slash if present (unless it's root '/')
+            
             let normalizedPath = pathname;
             if (normalizedPath.length > 1 && normalizedPath.endsWith('/')) {
                 normalizedPath = normalizedPath.slice(0, -1);

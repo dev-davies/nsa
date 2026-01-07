@@ -1,25 +1,14 @@
-<!doctype html>
-<html lang="en">
 
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Thank You - NovelSolar Academy</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <!-- Favicon -->
-    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
-    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32x32.png') }}">
-    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon-16x16.png') }}">
-    <link rel="manifest" href="{{ url_for('static', filename='site.webmanifest') }}">
     <style>
-        body {
+        .thank-you-container {
             background: var(--light);
             display: flex;
             align-items: center;
             justify-content: center;
-            height: 100vh;
+            min-height: 60vh; /* Adjusted for SPA content area */
             text-align: center;
             font-family: 'DM Sans', sans-serif;
+            width: 100%;
         }
 
         .thank-you-card {
@@ -30,15 +19,16 @@
             max-width: 500px;
             width: 90%;
             animation: fadeIn 0.8s ease-out;
+            margin: 0 auto;
         }
 
-        h1 {
+        .thank-you-card h1 {
             color: var(--primary);
             margin-bottom: 20px;
             font-size: 2.5rem;
         }
 
-        p {
+        .thank-you-card p {
             color: #666;
             font-size: 1.1rem;
             line-height: 1.6;
@@ -73,21 +63,18 @@
             }
         }
     </style>
-</head>
 
-<body>
-    <div class="thank-you-card">
-        <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none"
-            stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-            style="margin-bottom:20px;">
-            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-            <polyline points="22 4 12 14.01 9 11.01"></polyline>
-        </svg>
-        <h1>Thank You!</h1>
-        <p>Your registration has been successfully submitted. We will review your application and get back to you
-            shortly.</p>
-        <a href="{{ url_for('home') }}" class="btn-home">Return to Home</a>
+    <div class="thank-you-container">
+        <div class="thank-you-card">
+            <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none"
+                stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                style="margin-bottom:20px;">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+            <h1>Thank You!</h1>
+            <p>Your registration has been successfully submitted. We will review your application and get back to you
+                shortly.</p>
+            <a href="{{ url_for('home') }}" class="btn-home" onclick="loadPage('home'); return false;">Return to Home</a>
+        </div>
     </div>
-</body>
-
-</html>
