@@ -180,8 +180,24 @@
                     window.history.pushState({ page }, `Novelsolar Academy - ${page}`, pathname || '/');
                 }
             } catch (error) {
-                contentDiv.innerHTML = `<div class="container mt-5"><div class="alert alert-danger">Error loading page: ${error.message} <br> <a href="/" class="btn btn-primary mt-3">Return Home</a></div></div>`;
                 console.error('Page load error:', error);
+                // If this is the initial load and there's an error, try loading home page
+                if (pathname === '/' || pathname === '') {
+                    contentDiv.innerHTML = `<div class="container mt-5"><div class="alert alert-info">Loading homepage...</div></div>`;
+                    // Try loading home directly from the API
+                    try {
+                        const homeResponse = await fetch('/api/page/home');
+                        const homeData = await homeResponse.json();
+                        if (homeData.content) {
+                            renderPage(homeData.content);
+                            pageCache['home'] = homeData.content;
+                            return;
+                        }
+                    } catch (e) {
+                        console.error('Failed to load homepage:', e);
+                    }
+                }
+                contentDiv.innerHTML = `<div class="container mt-5"><div class="alert alert-danger">Error loading page: ${error.message} <br> <a href="/" class="btn btn-primary mt-3" onclick="loadPage('/'); return false;">Return Home</a></div></div>`;
             } finally {
                 loader.classList.remove('active');
                 contentDiv.classList.remove('loading');
