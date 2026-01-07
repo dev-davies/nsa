@@ -1,10 +1,12 @@
 import sqlite3
+print("--- APP STARTING ---")
 import os
 from flask import Flask, render_template, request, flash, redirect, url_for, jsonify, g, session
 from werkzeug.security import check_password_hash, generate_password_hash
 from itsdangerous import URLSafeTimedSerializer
 
-app = Flask(__name__)
+# Ensure Flask uses the correct template folder
+app = Flask(__name__, template_folder="templates")
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-key-change-in-production')  # Required for flashing messages
 s = URLSafeTimedSerializer(app.secret_key)
 
@@ -28,90 +30,54 @@ def close_connection(exception):
 def home():
     return render_template("app.html")
 
+# SPA Routing Configuration
+PAGE_MAP = {
+    'home': 'index.html',
+    'courses': 'course.html',
+    'testimonial': 'testimonial.html',
+    'registration': 'registration.html',
+}
+
+COURSE_MAP = {
+    'solar-design-installation': ('solar-design-installation.html', 'Solar Design & Installation'),
+    'solarpreneurship': ('solarpreneurship.html', 'Solarpreneurship'),
+    'repair-maintenance': ('repair-maintenance.html', 'Repair & Maintenance'),
+    'hse-management': ('hse-management.html', 'HSE Management'),
+    'ai-robotics': ('ai-robotics.html', 'AI & Robotics'),
+    'web-development': ('web-development.html', 'Web Development'),
+    'digital-marketing': ('digital-marketing.html', 'Digital Marketing'),
+}
+
 # API endpoints to fetch page content dynamically
 @app.route("/api/page/<page_name>")
 def get_page(page_name):
     """Fetch page content as JSON for SPA loading"""
-    pages = {
-        'home': 'index.html',
-        'courses': 'course.html',
-        'testimonial': 'testimonial.html',
-    }
-    
-    if page_name not in pages:
+    if page_name not in PAGE_MAP:
+        # Check if it's a course name
+        if page_name in COURSE_MAP:
+             return get_course(page_name)
+        app.logger.warning(f"Page not found: {page_name}")
         return jsonify({"error": "Page not found"}), 404
-    
+
     try:
-        content = render_template(f"pages/{pages[page_name]}")
+        content = render_template(f"pages/{PAGE_MAP[page_name]}")
         return jsonify({"content": content, "page": page_name})
     except Exception as e:
+        app.logger.error(f"Error rendering page '{page_name}': {e}")
         return jsonify({"error": str(e)}), 500
 
-# Course detail endpoints - also serve via API
 @app.route("/api/course/<course_slug>")
 def get_course(course_slug):
     """Fetch course content dynamically"""
-    course_map = {
-        'solar-design-installation': ('solar-design-installation.html', 'Solar Design & Installation'),
-        'solarpreneurship': ('solarpreneurship.html', 'Solarpreneurship'),
-        'repair-maintenance': ('repair-maintenance.html', 'Repair & Maintenance'),
-        'hse-management': ('hse-management.html', 'HSE Management'),
-        'ai-robotics': ('ai-robotics.html', 'AI & Robotics'),
-        'web-development': ('web-development.html', 'Web Development'),
-        'digital-marketing': ('digital-marketing.html', 'Digital Marketing'),
-    }
-    
-    if course_slug not in course_map:
+    if course_slug not in COURSE_MAP:
         return jsonify({"error": "Course not found"}), 404
     
     try:
-        template_file, course_name = course_map[course_slug]
+        template_file, course_name = COURSE_MAP[course_slug]
         content = render_template(f"pages/{template_file}")
         return jsonify({"content": content, "page": f"course-{course_slug}", "title": course_name})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-# Traditional routes for direct access and backwards compatibility
-@app.route("/courses")
-def courses():
-    return render_template("index.html")
-
-@app.route("/registration")
-def registration():
-    return render_template("registration.html")
-
-@app.route("/testimonial")
-def info_testimonial():
-    return render_template("index.html")
-
-# Course Details - redirect to SPA
-@app.route("/course/solar-design-installation")
-def solar_design_installation():
-    return render_template("index.html")
-
-@app.route("/course/solarpreneurship")
-def solarpreneurship():
-    return render_template("index.html")
-
-@app.route("/course/repair-maintenance")
-def repair_maintenance():
-    return render_template("index.html")
-
-@app.route("/course/hse-management")
-def hse_management():
-    return render_template("index.html")
-
-@app.route("/course/ai-robotics")
-def ai_robotics():
-    return render_template("index.html")
-
-@app.route("/course/web-development")
-def web_development():
-    return render_template("index.html")
-
-@app.route("/course/digital-marketing")
-def digital_marketing():
-    return render_template("index.html")
 
 @app.route("/admin/login", methods=["GET", "POST"])
 def admin_login():
@@ -306,13 +272,39 @@ def submit_registration():
         return jsonify({"status": "success", "message": "Registration received", "redirect": url_for('thank_you')})
     
     # Fallback for standard form submission (if JS fails or is disabled)
-    # Note: This block handles standard POST requests. For brevity, assuming similar fields are extracted from request.form
-    # In a full implementation, you would extract all fields like in the JSON block above.
     full_name = request.form.get("fullName")
     email = request.form.get("email")
-    # ... (Implementation for standard form persistence would go here)
-    print(f"Registration Submission (Form): {full_name}, {email}")
+    phone = request.form.get("phone")
+    dob = request.form.get("dob")
+    address = request.form.get("address")
+    sex = request.form.get("sex")
+    nationality = request.form.get("nationality")
+    state = request.form.get("state")
+    course = request.form.get("course")
+    level = request.form.get("level")
+    qualification = request.form.get("qualification")
+    goals = request.form.get("goals")
+    experience = request.form.get("experience")
+    info_source = request.form.get("infoSource")
+
+    db = get_db()
+    db.execute('''INSERT INTO registrations 
+                  (full_name, email, phone, dob, address, sex, nationality, state, course, level, qualification, goals, experience, info_source) 
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+               (full_name, email, phone, dob, address, sex, nationality, state, course, level, qualification, goals, experience, info_source))
+    db.commit()
+    print(f"Registration Submission Saved (Form): {full_name}")
     return redirect(url_for('thank_you'))
+
+# Unified route to serve SPA shell for all frontend paths
+@app.route("/", defaults={'path': ''})
+@app.route("/<path:path>")
+def catch_all(path):
+    # Exclude Static files from catch-all if they fall through
+    if path.startswith('static/'):
+        return None
+        
+    return render_template("app.html")
 
 if __name__ == "__main__":
     app.run(debug=os.environ.get('FLASK_DEBUG', False))
