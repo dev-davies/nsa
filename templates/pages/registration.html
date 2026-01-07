@@ -46,7 +46,7 @@
                                 <i class="fa fa-chevron-down" style="font-size: 0.8rem;"></i>
                             </span>
                         </div>
-                        <select id="nationality" name="nationality" class="form-control" required
+                        <select id="nationality" name="nationality" class="form-control"
                             style="display: none;">
                             <option value="">-- Select a Country --</option>
                         </select>
@@ -378,8 +378,10 @@
                     }
                 });
 
-                // Validate nationality field
-                if (!validateField(nationalitySelect)) {
+                // Validate nationality field - check the hidden select
+                const nationalityValue = nationalitySelect.value;
+                if (!nationalityValue || nationalityValue === '') {
+                    showFieldError(nationalitySearch, 'Please select your nationality');
                     isValid = false;
                 }
 
