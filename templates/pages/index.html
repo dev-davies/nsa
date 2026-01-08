@@ -483,7 +483,13 @@
                         <h1 class="display-4">Send Us A Message</h1>
                     </div>
                     <div class="contact-form">
-                        <form method="post" action="{{ url_for('submit_contact') }}">
+                        <form method="post" action="{{ url_for('submit_contact') }}" id="contactForm">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                            <!-- Anti-bot protection: Honeypot fields (hidden from humans, bots will fill them) -->
+                            <input type="text" name="website" id="contact_website" style="position: absolute; left: -9999px; opacity: 0; pointer-events: none; tabindex: -1; width: 0; height: 0;" autocomplete="off" aria-hidden="true">
+                            <input type="text" name="email_confirm" id="contact_email_confirm" style="position: absolute; left: -9999px; opacity: 0; pointer-events: none; tabindex: -1; width: 0; height: 0;" autocomplete="off" aria-hidden="true">
+                            <!-- Anti-bot protection: Form start time tracking -->
+                            <input type="hidden" name="_form_start_time" id="contact_form_start_time" value="">
                             <div class="row">
                                 <div class="col-6 form-group">
                                     <input name="name" type="text"
@@ -516,3 +522,15 @@
         </div>
     </div>
     <!-- Contact End -->
+
+    <!-- Contact Form Anti-Bot Protection -->
+    <script>
+        // Initialize form start time when contact form is loaded
+        (function() {
+            const contactForm = document.getElementById('contactForm');
+            const formStartTime = document.getElementById('contact_form_start_time');
+            if (contactForm && formStartTime && !formStartTime.value) {
+                formStartTime.value = (Date.now() / 1000).toString(); // Unix timestamp in seconds
+            }
+        })();
+    </script>

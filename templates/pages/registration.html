@@ -8,6 +8,12 @@
 
             <form id="registrationForm" class="registration-form" method="post"
                 action="{{ url_for('submit_registration') }}">
+                <input type="hidden" name="csrf_token" id="csrf_token" value="{{ csrf_token() }}"/>
+                <!-- Anti-bot protection: Honeypot fields (hidden from humans, bots will fill them) -->
+                <input type="text" name="website" id="website" style="position: absolute; left: -9999px; opacity: 0; pointer-events: none; tabindex: -1; width: 0; height: 0;" autocomplete="off" aria-hidden="true">
+                <input type="text" name="email_confirm" id="email_confirm" style="position: absolute; left: -9999px; opacity: 0; pointer-events: none; tabindex: -1; width: 0; height: 0;" autocomplete="off" aria-hidden="true">
+                <!-- Anti-bot protection: Form start time tracking -->
+                <input type="hidden" name="_form_start_time" id="_form_start_time" value="">
                 <!-- Personal Information Section -->
                 <div class="form-section-title">
                     <i class="fa fa-user mr-2"></i>Personal Information
@@ -275,6 +281,12 @@
               
               if (!registrationForm) return; // Guard clause
               
+              // Anti-bot protection: Set form start time when form is first loaded
+              const formStartTime = document.getElementById('_form_start_time');
+              if (formStartTime && !formStartTime.value) {
+                  formStartTime.value = (Date.now() / 1000).toString(); // Unix timestamp in seconds
+              }
+              
               const formInputs = registrationForm.querySelectorAll('input, select, textarea');
               const feedbackDiv = document.getElementById('formFeedback');
 
@@ -396,12 +408,29 @@
                     const formData = new FormData(registrationForm);
                     const data = Object.fromEntries(formData.entries());
                     data.terms = document.getElementById('terms').checked;
+                    
+                    // Include form start time for anti-bot validation
+                    const formStartTimeField = document.getElementById('_form_start_time');
+                    if (formStartTimeField && formStartTimeField.value) {
+                        data._form_start_time = formStartTimeField.value;
+                    } else {
+                        // Fallback: set current time if not already set (shouldn't happen normally)
+                        data._form_start_time = (Date.now() / 1000).toString();
+                    }
+                    
+                    // Ensure honeypot fields are empty (anti-bot protection)
+                    data.website = '';
+                    data.email_confirm = '';
+
+                    // Get CSRF token
+                    const csrfToken = document.getElementById('csrf_token')?.value || '';
 
                     // Send to backend
                     fetch("/submit_registration", { // Hardcoded URL or use template var if processed
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
+                            "X-CSRFToken": csrfToken
                         },
                         body: JSON.stringify(data),
                     })

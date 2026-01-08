@@ -1,16 +1,135 @@
 import sqlite3
 print("--- APP STARTING ---")
 import os
+import time
 from flask import Flask, render_template, request, flash, redirect, url_for, jsonify, g, session
 from werkzeug.security import check_password_hash, generate_password_hash
 from itsdangerous import URLSafeTimedSerializer
+from flask_wtf.csrf import CSRFProtect, CSRFError
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 # Ensure Flask uses the correct template folder
 app = Flask(__name__, template_folder="templates")
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-key-change-in-production')  # Required for flashing messages
 s = URLSafeTimedSerializer(app.secret_key)
 
+# Initialize CSRF Protection
+csrf = CSRFProtect(app)
+
+# Initialize Rate Limiter
+limiter = Limiter(
+    app=app,
+    key_func=get_remote_address,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://"
+)
+
+# Error handler for CSRF validation failures
+@app.errorhandler(CSRFError)
+def handle_csrf_error(e):
+    """Handle CSRF token validation errors"""
+    if request.is_json or request.path.startswith('/submit_'):
+        return jsonify({"status": "error", "message": "CSRF token missing or invalid. Please refresh the page and try again."}), 400
+    flash("CSRF token missing or invalid. Please try again.", "error")
+    return redirect(request.url or url_for('home'))
+
+# Error handler for rate limit exceeded
+from flask_limiter.errors import RateLimitExceeded
+
+@app.errorhandler(RateLimitExceeded)
+def handle_rate_limit_exceeded(e):
+    """Handle rate limit exceeded errors"""
+    retry_after = getattr(e, 'retry_after', 60)
+    if request.is_json or request.path.startswith('/submit_'):
+        return jsonify({
+            "status": "error", 
+            "message": f"Too many requests. Please wait {retry_after} seconds before trying again."
+        }), 429
+    flash(f"Too many requests. Please wait a moment before trying again.", "error")
+    return redirect(request.url or url_for('home')), 429
+
 DATABASE = 'database.db'
+
+# Anti-bot protection helper functions
+def check_honeypot(form_data, honeypot_field_name='website'):
+    """Check if honeypot field was filled (indicates bot)"""
+    honeypot_value = form_data.get(honeypot_field_name, '').strip()
+    return honeypot_value == ''  # True if honeypot is empty (human), False if filled (bot)
+
+def check_form_timing(form_data, min_time=3):
+    """Check if form was filled too quickly (indicates bot)"""
+    form_start_time = form_data.get('_form_start_time', '0')
+    try:
+        start_time = float(form_start_time)
+        elapsed_time = time.time() - start_time
+        return elapsed_time >= min_time  # True if enough time passed, False if too fast
+    except (ValueError, TypeError):
+        return False  # If timing data is invalid, reject
+
+def validate_anti_bot(form_data, is_json=False):
+    """Validate anti-bot protections. Returns (is_valid, error_message)"""
+    if is_json:
+        honeypot_field = form_data.get('website', '').strip()
+        honeypot_field2 = form_data.get('email_confirm', '').strip()  # Second honeypot
+        form_start = form_data.get('_form_start_time', '0')
+    else:
+        honeypot_field = form_data.get('website', '').strip()
+        honeypot_field2 = form_data.get('email_confirm', '').strip()  # Second honeypot
+        form_start = form_data.get('_form_start_time', '0')
+    
+    # Check honeypot fields (if filled, it's a bot)
+    if honeypot_field != '':
+        app.logger.warning(f"Bot detected: Honeypot field 'website' was filled with: {honeypot_field}")
+        return False, "Invalid submission detected."
+    
+    if honeypot_field2 != '':
+        app.logger.warning(f"Bot detected: Honeypot field 'email_confirm' was filled with: {honeypot_field2}")
+        return False, "Invalid submission detected."
+    
+    # Check timing - form should take at least 5 seconds to fill out
+    try:
+        start_time = float(form_start)
+        if start_time == 0:
+            return False, "Form timing validation failed. Please refresh and try again."
+        
+        elapsed_time = time.time() - start_time
+        
+        # Too fast (less than 5 seconds) - likely a bot
+        if elapsed_time < 5:
+            app.logger.warning(f"Bot suspected: Form submitted in {elapsed_time:.2f} seconds (too fast)")
+            return False, "Form submitted too quickly. Please take your time filling out all fields carefully."
+        
+        # Suspiciously fast for a registration form (less than 10 seconds for complex forms)
+        if elapsed_time < 10 and 'fullName' in str(form_data):
+            app.logger.warning(f"Bot suspected: Registration form submitted in {elapsed_time:.2f} seconds")
+            return False, "Form submitted too quickly. Please ensure all fields are completed accurately."
+        
+        # Too slow (more than 1 hour) - session might be stale
+        if elapsed_time > 3600:
+            return False, "Form session expired. Please refresh the page and try again."
+            
+    except (ValueError, TypeError):
+        app.logger.warning(f"Invalid form timing data: {form_start}")
+        return False, "Invalid form submission. Please refresh the page and try again."
+    
+    # Additional checks for JSON submissions
+    if is_json:
+        # Check if required fields are suspiciously similar (bot pattern)
+        if 'fullName' in form_data and 'email' in form_data:
+            name = form_data.get('fullName', '').strip()
+            email = form_data.get('email', '').strip()
+            if name and email and name.lower() == email.lower():
+                app.logger.warning(f"Bot suspected: Name and email are identical")
+                return False, "Invalid form data detected."
+    
+    # Basic user agent check (only reject obviously fake ones, don't be too strict)
+    user_agent = request.headers.get('User-Agent', '')
+    if not user_agent or len(user_agent) < 10:
+        app.logger.warning(f"Suspicious user agent: {user_agent}")
+        # Don't reject, just log - some privacy tools hide user agents
+    
+    return True, None
 
 def get_db():
     db = getattr(g, '_database', None)
@@ -49,7 +168,17 @@ COURSE_MAP = {
     'digital-marketing': ('digital-marketing.html', 'Digital Marketing'),
 }
 
+# API endpoint to get CSRF token for AJAX requests
+@csrf.exempt
+@app.route("/api/csrf-token")
+def get_csrf_token():
+    """Return CSRF token for AJAX requests"""
+    from flask_wtf.csrf import generate_csrf
+    return jsonify({"csrf_token": generate_csrf()})
+
 # API endpoints to fetch page content dynamically
+# Exclude API endpoints from CSRF protection as they're used by SPA
+@csrf.exempt
 @app.route("/api/page/<page_name>")
 def get_page(page_name):
     """Fetch page content as JSON for SPA loading"""
@@ -67,6 +196,7 @@ def get_page(page_name):
         app.logger.error(f"Error rendering page '{page_name}': {e}")
         return jsonify({"error": str(e)}), 500
 
+@csrf.exempt
 @app.route("/api/course/<course_slug>")
 def get_course(course_slug):
     """Fetch course content dynamically"""
@@ -234,65 +364,110 @@ def reset_password(token):
     return render_template("admin/reset_password.html", token=token)
 
 # Contact Form Submission
+@limiter.limit("5 per minute")  # Rate limit: 5 submissions per minute per IP
 @app.route("/submit_contact", methods=["POST"])
 def submit_contact():
+    # Anti-bot validation
+    is_valid, error_msg = validate_anti_bot(request.form, is_json=False)
+    if not is_valid:
+        flash(error_msg or "Invalid submission detected.", "error")
+        return redirect(url_for('home'))
+    
     name = request.form.get("name")
     email = request.form.get("email")
     subject = request.form.get("subject")
     message = request.form.get("message")
     
-    # Save to DB
-    db = get_db()
-    db.execute('INSERT INTO messages (name, email, subject, message) VALUES (?, ?, ?, ?)',
-               (name, email, subject, message))
-    db.commit()
-    print(f"Contact Form Submission Saved: {name}, {email}")
+    # Basic validation
+    if not name or not email or not message:
+        flash("Please fill in all required fields.", "error")
+        return redirect(url_for('home'))
     
-    flash("Your message has been sent successfully!", "success")
+    # Save to DB
+    try:
+        db = get_db()
+        db.execute('INSERT INTO messages (name, email, subject, message) VALUES (?, ?, ?, ?)',
+                   (name, email, subject, message))
+        db.commit()
+        print(f"Contact Form Submission Saved: {name}, {email}")
+        flash("Your message has been sent successfully!", "success")
+    except Exception as e:
+        app.logger.error(f"Error saving contact form: {e}")
+        flash("An error occurred. Please try again later.", "error")
+    
     return redirect(url_for('home'))
 
 
+@limiter.limit("3 per hour")  # Rate limit: 3 registrations per hour per IP
 @app.route("/submit_registration", methods=["POST"])
 def submit_registration():
     if request.is_json:
         data = request.get_json()
+        
+        # Anti-bot validation
+        is_valid, error_msg = validate_anti_bot(data, is_json=True)
+        if not is_valid:
+            return jsonify({"status": "error", "message": error_msg or "Invalid submission detected."}), 400
+        
+        # Basic validation
+        required_fields = ['fullName', 'email', 'phoneNumber', 'dob', 'sex', 'nationality', 'state', 'course', 'educationLevel', 'qualification', 'courseGoals', 'infoSource']
+        missing_fields = [field for field in required_fields if not data.get(field)]
+        if missing_fields:
+            return jsonify({"status": "error", "message": "Please fill in all required fields."}), 400
+        
         # Save to DB
-        db = get_db()
-        db.execute('''INSERT INTO registrations 
-                      (full_name, email, phone, dob, address, sex, nationality, state, course, level, qualification, goals, experience, info_source) 
-                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-                   (data.get('fullName'), data.get('email'), data.get('phoneNumber'), data.get('dob'), data.get('address'), 
-                    data.get('sex'), data.get('nationality'), data.get('state'), data.get('course'), 
-                    data.get('educationLevel'), data.get('qualification'), data.get('courseGoals'), data.get('experience'), data.get('infoSource')))
-        db.commit()
-        print(f"Registration Submission Saved (JSON): {data.get('fullName')}")
-        # Return redirect URL for JS to handle
-        return jsonify({"status": "success", "message": "Registration received", "redirect": "/thank-you"})
+        try:
+            db = get_db()
+            db.execute('''INSERT INTO registrations 
+                          (full_name, email, phone, dob, address, sex, nationality, state, course, level, qualification, goals, experience, info_source) 
+                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                       (data.get('fullName'), data.get('email'), data.get('phoneNumber'), data.get('dob'), data.get('address'), 
+                        data.get('sex'), data.get('nationality'), data.get('state'), data.get('course'), 
+                        data.get('educationLevel'), data.get('qualification'), data.get('courseGoals'), data.get('experience'), data.get('infoSource')))
+            db.commit()
+            print(f"Registration Submission Saved (JSON): {data.get('fullName')}")
+            return jsonify({"status": "success", "message": "Registration received", "redirect": "/thank-you"})
+        except Exception as e:
+            app.logger.error(f"Error saving registration: {e}")
+            return jsonify({"status": "error", "message": "An error occurred. Please try again later."}), 500
     
     # Fallback for standard form submission (if JS fails or is disabled)
+    # Anti-bot validation
+    is_valid, error_msg = validate_anti_bot(request.form, is_json=False)
+    if not is_valid:
+        flash(error_msg or "Invalid submission detected.", "error")
+        return redirect('/registration')
+    
     # Match the field names to what registration.html actually sends
     full_name = request.form.get("fullName")
     email = request.form.get("email")
-    phone = request.form.get("phoneNumber")  # Changed from "phone" to "phoneNumber"
+    phone = request.form.get("phoneNumber")
     dob = request.form.get("dob")
     address = request.form.get("address")
     sex = request.form.get("sex")
     nationality = request.form.get("nationality")
     state = request.form.get("state")
     course = request.form.get("course")
-    level = request.form.get("educationLevel")  # Changed from "level" to "educationLevel"
+    level = request.form.get("educationLevel")
     qualification = request.form.get("qualification")
-    goals = request.form.get("courseGoals")  # Changed from "goals" to "courseGoals"
+    goals = request.form.get("courseGoals")
     experience = request.form.get("experience")
     info_source = request.form.get("infoSource")
 
-    db = get_db()
-    db.execute('''INSERT INTO registrations 
-                  (full_name, email, phone, dob, address, sex, nationality, state, course, level, qualification, goals, experience, info_source) 
-                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-               (full_name, email, phone, dob, address, sex, nationality, state, course, level, qualification, goals, experience, info_source))
-    db.commit()
-    print(f"Registration Submission Saved (Form): {full_name}")
+    try:
+        db = get_db()
+        db.execute('''INSERT INTO registrations 
+                      (full_name, email, phone, dob, address, sex, nationality, state, course, level, qualification, goals, experience, info_source) 
+                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                   (full_name, email, phone, dob, address, sex, nationality, state, course, level, qualification, goals, experience, info_source))
+        db.commit()
+        print(f"Registration Submission Saved (Form): {full_name}")
+        flash("Registration submitted successfully!", "success")
+    except Exception as e:
+        app.logger.error(f"Error saving registration: {e}")
+        flash("An error occurred. Please try again later.", "error")
+        return redirect('/registration')
+    
     return redirect('/thank-you')
 
 

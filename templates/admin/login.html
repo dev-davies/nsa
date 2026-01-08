@@ -29,6 +29,7 @@
             {% endwith %}
 
             <form class="registration-form" method="POST" action="{{ url_for('admin_login') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <div class="form-group">
                     <label for="username">Username</label>
                     <input id="username" name="username" class="form-control" required autofocus>
