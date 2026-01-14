@@ -12,6 +12,7 @@ CREATE TABLE registrations (
     nationality TEXT NOT NULL,
     state TEXT NOT NULL,
     course TEXT NOT NULL,
+    duration TEXT,
     level TEXT NOT NULL,
     qualification TEXT,
     goals TEXT,

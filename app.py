@@ -32,7 +32,7 @@ def handle_csrf_error(e):
     if request.is_json or request.path.startswith('/submit_'):
         return jsonify({"status": "error", "message": "CSRF token missing or invalid. Please refresh the page and try again."}), 400
     flash("CSRF token missing or invalid. Please try again.", "error")
-    return redirect(request.url or url_for('home'))
+    return redirect(request.url or '/')
 
 # Error handler for rate limit exceeded
 from flask_limiter.errors import RateLimitExceeded
@@ -47,9 +47,69 @@ def handle_rate_limit_exceeded(e):
             "message": f"Too many requests. Please wait {retry_after} seconds before trying again."
         }), 429
     flash(f"Too many requests. Please wait a moment before trying again.", "error")
-    return redirect(request.url or url_for('home')), 429
+    return redirect(request.url or '/'), 429
 
 DATABASE = 'database.db'
+
+def init_database():
+    """Initialize database if it doesn't exist or if tables are missing"""
+    import os
+    
+    # Check if database file exists
+    db_exists = os.path.exists(DATABASE)
+    
+    if not db_exists:
+        print(f"Database '{DATABASE}' not found. Initializing...")
+        try:
+            db = sqlite3.connect(DATABASE)
+            with open('schema.sql', 'r') as f:
+                db.executescript(f.read())
+            db.commit()
+            db.close()
+            print(f"Database '{DATABASE}' initialized successfully.")
+        except FileNotFoundError:
+            print(f"ERROR: schema.sql file not found. Cannot initialize database.")
+            raise
+        except Exception as e:
+            print(f"ERROR: Failed to initialize database: {e}")
+            raise
+    else:
+        # Database exists, but check if tables are present
+        try:
+            db = sqlite3.connect(DATABASE)
+            cursor = db.cursor()
+            
+            # Check if required tables exist
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+            existing_tables = [row[0] for row in cursor.fetchall()]
+            
+            required_tables = ['registrations', 'messages', 'admins']
+            missing_tables = [table for table in required_tables if table not in existing_tables]
+            
+            if missing_tables:
+                print(f"Missing tables detected: {missing_tables}. Initializing missing tables...")
+                with open('schema.sql', 'r') as f:
+                    db.executescript(f.read())
+                db.commit()
+                print("Missing tables created successfully.")
+            
+            # Check for missing columns in existing tables (Migration Logic)
+            # Check 'registrations' table for 'duration' column
+            cursor.execute("PRAGMA table_info(registrations)")
+            columns = [row[1] for row in cursor.fetchall()]
+            if 'duration' not in columns:
+                print("Migrating database: Adding 'duration' column to 'registrations' table...")
+                cursor.execute("ALTER TABLE registrations ADD COLUMN duration TEXT")
+                db.commit()
+                print("Migration successful.")
+
+            db.close()
+        except Exception as e:
+            print(f"WARNING: Could not verify database tables: {e}")
+            # Don't raise - let the app continue, errors will show when trying to use DB
+
+# Initialize database on app startup
+init_database()
 
 # Anti-bot protection helper functions
 def check_honeypot(form_data, honeypot_field_name='website'):
@@ -143,11 +203,6 @@ def close_connection(exception):
     db = getattr(g, '_database', None)
     if db is not None:
         db.close()
-
-# Main entry point - serves single-page app shell
-@app.route("/")
-def home():
-    return render_template("app.html")
 
 # SPA Routing Configuration
 PAGE_MAP = {
@@ -371,7 +426,7 @@ def submit_contact():
     is_valid, error_msg = validate_anti_bot(request.form, is_json=False)
     if not is_valid:
         flash(error_msg or "Invalid submission detected.", "error")
-        return redirect(url_for('home'))
+        return redirect('/')
     
     name = request.form.get("name")
     email = request.form.get("email")
@@ -381,7 +436,7 @@ def submit_contact():
     # Basic validation
     if not name or not email or not message:
         flash("Please fill in all required fields.", "error")
-        return redirect(url_for('home'))
+        return redirect('/')
     
     # Save to DB
     try:
@@ -395,7 +450,7 @@ def submit_contact():
         app.logger.error(f"Error saving contact form: {e}")
         flash("An error occurred. Please try again later.", "error")
     
-    return redirect(url_for('home'))
+    return redirect('/')
 
 
 @limiter.limit("3 per hour")  # Rate limit: 3 registrations per hour per IP
@@ -419,10 +474,10 @@ def submit_registration():
         try:
             db = get_db()
             db.execute('''INSERT INTO registrations 
-                          (full_name, email, phone, dob, address, sex, nationality, state, course, level, qualification, goals, experience, info_source) 
-                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                          (full_name, email, phone, dob, address, sex, nationality, state, course, duration, level, qualification, goals, experience, info_source) 
+                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
                        (data.get('fullName'), data.get('email'), data.get('phoneNumber'), data.get('dob'), data.get('address'), 
-                        data.get('sex'), data.get('nationality'), data.get('state'), data.get('course'), 
+                        data.get('sex'), data.get('nationality'), data.get('state'), data.get('course'), data.get('duration'),
                         data.get('educationLevel'), data.get('qualification'), data.get('courseGoals'), data.get('experience'), data.get('infoSource')))
             db.commit()
             print(f"Registration Submission Saved (JSON): {data.get('fullName')}")
@@ -452,14 +507,16 @@ def submit_registration():
     qualification = request.form.get("qualification")
     goals = request.form.get("courseGoals")
     experience = request.form.get("experience")
+    experience = request.form.get("experience")
     info_source = request.form.get("infoSource")
+    duration = request.form.get("duration")
 
     try:
         db = get_db()
         db.execute('''INSERT INTO registrations 
-                      (full_name, email, phone, dob, address, sex, nationality, state, course, level, qualification, goals, experience, info_source) 
-                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-                   (full_name, email, phone, dob, address, sex, nationality, state, course, level, qualification, goals, experience, info_source))
+                      (full_name, email, phone, dob, address, sex, nationality, state, course, duration, level, qualification, goals, experience, info_source) 
+                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                   (full_name, email, phone, dob, address, sex, nationality, state, course, duration, level, qualification, goals, experience, info_source))
         db.commit()
         print(f"Registration Submission Saved (Form): {full_name}")
         flash("Registration submitted successfully!", "success")
@@ -474,7 +531,7 @@ def submit_registration():
 # Unified route to serve SPA shell for all frontend paths
 @app.route("/", defaults={'path': ''})
 @app.route("/<path:path>")
-def catch_all(path):
+def home(path):
     # Exclude Static files from catch-all if they fall through
     if path.startswith('static/'):
         return None
