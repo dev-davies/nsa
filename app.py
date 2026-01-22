@@ -105,6 +105,27 @@ def init_database():
                 cursor.execute("ALTER TABLE registrations ADD COLUMN duration TEXT")
                 db.commit()
                 print("Migration successful.")
+            
+            # Check 'admins' table for 'created_at' column
+            cursor.execute("PRAGMA table_info(admins)")
+            columns = [row[1] for row in cursor.fetchall()]
+            if 'created_at' not in columns:
+                print("Migrating database: Adding 'created_at' column to 'admins' table...")
+                cursor.execute("ALTER TABLE admins ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+                db.commit()
+                print("Migration successful.")
+            
+            # Ensure at least one master admin exists
+            cursor.execute("SELECT COUNT(*) FROM admins WHERE role = 'master'")
+            master_count = cursor.fetchone()[0]
+            if master_count == 0:
+                cursor.execute("SELECT id FROM admins LIMIT 1")
+                first_admin = cursor.fetchone()
+                if first_admin:
+                    print("No master admin found. Promoting first admin to master...")
+                    cursor.execute("UPDATE admins SET role = 'master' WHERE id = ?", (first_admin[0],))
+                    db.commit()
+                    print("First admin promoted to master role.")
 
             db.close()
         except Exception as e:
@@ -471,8 +492,9 @@ def admin_dashboard():
     db = get_db()
     registrations = db.execute('SELECT id, full_name, email, phone, course, submitted_at FROM registrations ORDER BY submitted_at DESC').fetchall()
     messages = db.execute('SELECT * FROM messages ORDER BY submitted_at DESC').fetchall()
-    admins = db.execute('SELECT * FROM admins').fetchall()
-    return render_template("admin/dashboard.html", registrations=registrations, messages=messages, admins=admins)
+    admins = db.execute('SELECT id, username, email, role, created_at FROM admins ORDER BY created_at DESC').fetchall()
+    is_master_admin = session.get('admin_role') == 'master'
+    return render_template("admin/dashboard.html", registrations=registrations, messages=messages, admins=admins, is_master_admin=is_master_admin)
 
 @app.route("/admin/registration/<int:reg_id>")
 @require_admin()
@@ -490,17 +512,22 @@ def create_admin():
     username = request.form.get("username")
     email = request.form.get("email")
     password = request.form.get("password")
+    role = request.form.get("role", "admin")  # Default to 'admin', but allow 'master' too
     
     if not all([username, email, password]):
         flash("All fields are required.", "error")
         return redirect(url_for('admin_dashboard'))
     
+    # Validate role
+    if role not in ['admin', 'master']:
+        role = 'admin'
+    
     try:
         db = get_db()
         db.execute('INSERT INTO admins (username, email, role, password_hash) VALUES (?, ?, ?, ?)',
-                   (username, email, 'admin', generate_password_hash(password)))
+                   (username, email, role, generate_password_hash(password)))
         db.commit()
-        flash(f"Admin '{username}' successfully created.", "success")
+        flash(f"Admin '{username}' ({role.title()}) successfully created.", "success")
     except sqlite3.IntegrityError:
         flash("Username or Email already exists.", "error")
     

@@ -35,5 +35,6 @@ CREATE TABLE admins (
     username TEXT NOT NULL UNIQUE,
     email TEXT NOT NULL UNIQUE,
     role TEXT DEFAULT 'admin',
-    password_hash TEXT NOT NULL
+    password_hash TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
