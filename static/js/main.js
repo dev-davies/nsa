@@ -78,102 +78,73 @@
             counterObserver.observe(this);
         });
 
-        // Remove any existing owl instances to prevent issues
-        $('.courses-carousel').trigger('destroy.owl.carousel');
-        $('.team-carousel').trigger('destroy.owl.carousel');
-        $('.testimonial-carousel').trigger('destroy.owl.carousel');
-        $('.related-carousel').trigger('destroy.owl.carousel');
+        // Remove any existing owl instances and reinitialize carousels
+        $('.courses-carousel, .team-carousel, .testimonial-carousel, .related-carousel').trigger('destroy.owl.carousel');
 
-        // Courses carousel
-        $(".courses-carousel").owlCarousel({
-            autoplay: true,
-            smartSpeed: 1500,
-            loop: true,
-            dots: false,
-            nav: false,
-            margin: 25,
-            responsive: {
-                0: {
-                    items: 1
-                },
-                576: {
-                    items: 3
-                },
-                768: {
-                    items: 4
-                },
-                992: {
-                    items: 5
+        // Carousel factory function
+        const initCarousel = (selector, config) => $(selector).owlCarousel(config);
+
+        // Carousel configurations
+        const carouselConfigs = {
+            courses: {
+                autoplay: true,
+                smartSpeed: 1500,
+                loop: true,
+                dots: false,
+                nav: false,
+                margin: 25,
+                responsive: {
+                    0: { items: 1 },
+                    576: { items: 3 },
+                    768: { items: 4 },
+                    992: { items: 5 }
+                }
+            },
+            team: {
+                autoplay: true,
+                smartSpeed: 1000,
+                margin: 30,
+                dots: false,
+                loop: true,
+                nav: true,
+                navText: ['<i class="fa fa-angle-left" aria-hidden="true"></i>', '<i class="fa fa-angle-right" aria-hidden="true"></i>'],
+                responsive: {
+                    0: { items: 1 },
+                    576: { items: 1 },
+                    768: { items: 2 },
+                    992: { items: 3 }
+                }
+            },
+            testimonial: {
+                autoplay: true,
+                smartSpeed: 1500,
+                items: 1,
+                dots: false,
+                loop: true,
+                nav: true,
+                navText: ['<i class="fa fa-angle-left" aria-hidden="true"></i>', '<i class="fa fa-angle-right" aria-hidden="true"></i>']
+            },
+            related: {
+                autoplay: true,
+                smartSpeed: 1000,
+                margin: 30,
+                dots: false,
+                loop: true,
+                nav: true,
+                navText: ['<i class="fa fa-angle-left" aria-hidden="true"></i>', '<i class="fa fa-angle-right" aria-hidden="true"></i>'],
+                responsive: {
+                    0: { items: 1 },
+                    576: { items: 1 },
+                    768: { items: 2 }
                 }
             }
-        });
+        };
 
-        // Team carousel
-        $(".team-carousel").owlCarousel({
-            autoplay: true,
-            smartSpeed: 1000,
-            margin: 30,
-            dots: false,
-            loop: true,
-            nav: true,
-            navText: [
-                '<i class="fa fa-angle-left" aria-hidden="true"></i>',
-                '<i class="fa fa-angle-right" aria-hidden="true"></i>'
-            ],
-            responsive: {
-                0: {
-                    items: 1
-                },
-                576: {
-                    items: 1
-                },
-                768: {
-                    items: 2
-                },
-                992: {
-                    items: 3
-                }
-            }
-        });
-
-        // Testimonials carousel
-        $(".testimonial-carousel").owlCarousel({
-            autoplay: true,
-            smartSpeed: 1500,
-            items: 1,
-            dots: false,
-            loop: true,
-            nav: true,
-            navText: [
-                '<i class="fa fa-angle-left" aria-hidden="true"></i>',
-                '<i class="fa fa-angle-right" aria-hidden="true"></i>'
-            ],
-        });
-
-        // Related carousel
-        $(".related-carousel").owlCarousel({
-            autoplay: true,
-            smartSpeed: 1000,
-            margin: 30,
-            dots: false,
-            loop: true,
-            nav: true,
-            navText: [
-                '<i class="fa fa-angle-left" aria-hidden="true"></i>',
-                '<i class="fa fa-angle-right" aria-hidden="true"></i>'
-            ],
-            responsive: {
-                0: {
-                    items: 1
-                },
-                576: {
-                    items: 1
-                },
-                768: {
-                    items: 2
-                }
-            }
-        });
+        // Initialize all carousels
+        initCarousel('.courses-carousel', carouselConfigs.courses);
+        initCarousel('.team-carousel', carouselConfigs.team);
+        initCarousel('.testimonial-carousel', carouselConfigs.testimonial);
+        initCarousel('.related-carousel', carouselConfigs.related);
 
         // Typed.js Initialization
         if ($('.typed-text-output').length == 1) {

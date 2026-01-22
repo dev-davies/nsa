@@ -111,40 +111,20 @@ def init_database():
 # Initialize database on app startup
 init_database()
 
-# Anti-bot protection helper functions
-def check_honeypot(form_data, honeypot_field_name='website'):
-    """Check if honeypot field was filled (indicates bot)"""
-    honeypot_value = form_data.get(honeypot_field_name, '').strip()
-    return honeypot_value == ''  # True if honeypot is empty (human), False if filled (bot)
-
-def check_form_timing(form_data, min_time=3):
-    """Check if form was filled too quickly (indicates bot)"""
-    form_start_time = form_data.get('_form_start_time', '0')
-    try:
-        start_time = float(form_start_time)
-        elapsed_time = time.time() - start_time
-        return elapsed_time >= min_time  # True if enough time passed, False if too fast
-    except (ValueError, TypeError):
-        return False  # If timing data is invalid, reject
-
+# Anti-bot protection
 def validate_anti_bot(form_data, is_json=False):
     """Validate anti-bot protections. Returns (is_valid, error_message)"""
-    if is_json:
-        honeypot_field = form_data.get('website', '').strip()
-        honeypot_field2 = form_data.get('email_confirm', '').strip()  # Second honeypot
-        form_start = form_data.get('_form_start_time', '0')
-    else:
-        honeypot_field = form_data.get('website', '').strip()
-        honeypot_field2 = form_data.get('email_confirm', '').strip()  # Second honeypot
-        form_start = form_data.get('_form_start_time', '0')
+    # Extract honeypot fields (same for JSON and form submissions)
+    honeypot_field = form_data.get('website', '').strip()
+    honeypot_field2 = form_data.get('email_confirm', '').strip()
+    form_start = form_data.get('_form_start_time', '0')
     
     # Check honeypot fields (if filled, it's a bot)
-    if honeypot_field != '':
-        app.logger.warning(f"Bot detected: Honeypot field 'website' was filled with: {honeypot_field}")
+    if honeypot_field:
+        app.logger.warning(f"Bot detected: Honeypot 'website' filled with: {honeypot_field}")
         return False, "Invalid submission detected."
-    
-    if honeypot_field2 != '':
-        app.logger.warning(f"Bot detected: Honeypot field 'email_confirm' was filled with: {honeypot_field2}")
+    if honeypot_field2:
+        app.logger.warning(f"Bot detected: Honeypot 'email_confirm' filled with: {honeypot_field2}")
         return False, "Invalid submission detected."
     
     # Check timing - form should take at least 5 seconds to fill out
@@ -157,52 +137,89 @@ def validate_anti_bot(form_data, is_json=False):
         
         # Too fast (less than 5 seconds) - likely a bot
         if elapsed_time < 5:
-            app.logger.warning(f"Bot suspected: Form submitted in {elapsed_time:.2f} seconds (too fast)")
+            app.logger.warning(f"Bot suspected: Form submitted in {elapsed_time:.2f}s (too fast)")
             return False, "Form submitted too quickly. Please take your time filling out all fields carefully."
         
-        # Suspiciously fast for a registration form (less than 10 seconds for complex forms)
+        # Suspiciously fast for registration form (less than 10 seconds for complex forms)
         if elapsed_time < 10 and 'fullName' in str(form_data):
-            app.logger.warning(f"Bot suspected: Registration form submitted in {elapsed_time:.2f} seconds")
+            app.logger.warning(f"Bot suspected: Registration form submitted in {elapsed_time:.2f}s")
             return False, "Form submitted too quickly. Please ensure all fields are completed accurately."
         
         # Too slow (more than 1 hour) - session might be stale
         if elapsed_time > 3600:
             return False, "Form session expired. Please refresh the page and try again."
-            
     except (ValueError, TypeError):
         app.logger.warning(f"Invalid form timing data: {form_start}")
         return False, "Invalid form submission. Please refresh the page and try again."
     
     # Additional checks for JSON submissions
-    if is_json:
-        # Check if required fields are suspiciously similar (bot pattern)
-        if 'fullName' in form_data and 'email' in form_data:
-            name = form_data.get('fullName', '').strip()
-            email = form_data.get('email', '').strip()
-            if name and email and name.lower() == email.lower():
-                app.logger.warning(f"Bot suspected: Name and email are identical")
-                return False, "Invalid form data detected."
+    if is_json and 'fullName' in form_data and 'email' in form_data:
+        name = form_data.get('fullName', '').strip()
+        email = form_data.get('email', '').strip()
+        if name and email and name.lower() == email.lower():
+            app.logger.warning("Bot suspected: Name and email are identical")
+            return False, "Invalid form data detected."
     
-    # Basic user agent check (only reject obviously fake ones, don't be too strict)
+    # Basic user agent check (log only, don't reject)
     user_agent = request.headers.get('User-Agent', '')
     if not user_agent or len(user_agent) < 10:
         app.logger.warning(f"Suspicious user agent: {user_agent}")
-        # Don't reject, just log - some privacy tools hide user agents
     
     return True, None
 
 def get_db():
-    db = getattr(g, '_database', None)
-    if db is None:
-        db = g._database = sqlite3.connect(DATABASE)
-        db.row_factory = sqlite3.Row
-    return db
+    """Get database connection from Flask g object"""
+    if not hasattr(g, '_database'):
+        g._database = sqlite3.connect(DATABASE)
+        g._database.row_factory = sqlite3.Row
+    return g._database
 
 @app.teardown_appcontext
 def close_connection(exception):
-    db = getattr(g, '_database', None)
-    if db is not None:
-        db.close()
+    """Close database connection at end of request"""
+    if hasattr(g, '_database'):
+        g._database.close()
+
+# Admin authentication decorator
+def require_admin(master_only=False):
+    """Decorator to require admin authentication and optionally master role"""
+    def decorator(f):
+        def wrapper(*args, **kwargs):
+            if not session.get('admin_logged_in'):
+                flash("Please log in to access this page.", "error")
+                return redirect(url_for('admin_login'))
+            if master_only and session.get('admin_role') != 'master':
+                flash("Unauthorized: Only Master Admins can access this.", "error")
+                return redirect(url_for('admin_dashboard'))
+            return f(*args, **kwargs)
+        wrapper.__name__ = f.__name__
+        return wrapper
+    return decorator
+
+# Database helper for registration insertion
+def insert_registration(data):
+    """Insert registration data into database. Accepts dict with snake_case or camelCase keys"""
+    db = get_db()
+    db.execute('''INSERT INTO registrations 
+                  (full_name, email, phone, dob, address, sex, nationality, state, course, duration, 
+                   level, qualification, goals, experience, info_source) 
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+               (data.get('full_name') or data.get('fullName'), 
+                data.get('email'), 
+                data.get('phone') or data.get('phoneNumber'), 
+                data.get('dob'), 
+                data.get('address'), 
+                data.get('sex'), 
+                data.get('nationality'), 
+                data.get('state'), 
+                data.get('course'), 
+                data.get('duration'),
+                data.get('level') or data.get('educationLevel'), 
+                data.get('qualification'), 
+                data.get('goals') or data.get('courseGoals'), 
+                data.get('experience'), 
+                data.get('info_source') or data.get('infoSource')))
+    db.commit()
 
 # SPA Routing Configuration
 PAGE_MAP = {
@@ -287,87 +304,61 @@ def admin_login():
 
 @app.route("/admin/logout")
 def admin_logout():
-    session.pop('admin_logged_in', None)
-    session.pop('admin_role', None)
-    session.pop('admin_username', None)
+    session.clear()
     flash("You have been logged out.", "success")
     return redirect(url_for('admin_login'))
 
 @app.route("/admin/dashboard")
+@require_admin()
 def admin_dashboard():
-    if not session.get('admin_logged_in'):
-        flash("Please log in to access the dashboard.", "error")
-        return redirect(url_for('admin_login'))
-
     db = get_db()
     registrations = db.execute('SELECT id, full_name, course, submitted_at FROM registrations ORDER BY submitted_at DESC').fetchall()
     messages = db.execute('SELECT * FROM messages ORDER BY submitted_at DESC').fetchall()
-    admins = db.execute('SELECT * FROM admins').fetchall() 
+    admins = db.execute('SELECT * FROM admins').fetchall()
     return render_template("admin/dashboard.html", registrations=registrations, messages=messages, admins=admins)
 
 @app.route("/admin/registration/<int:reg_id>")
+@require_admin()
 def registration_details(reg_id):
-    if not session.get('admin_logged_in'):
-        return redirect(url_for('admin_login'))
-    
     db = get_db()
     registration = db.execute('SELECT * FROM registrations WHERE id = ?', (reg_id,)).fetchone()
-    
-    if registration is None:
+    if not registration:
         flash("Registration not found.", "error")
         return redirect(url_for('admin_dashboard'))
-        
     return render_template("admin/registration_details.html", registration=registration)
 
 @app.route("/admin/create", methods=["POST"])
+@require_admin(master_only=True)
 def create_admin():
-    if not session.get('admin_logged_in'):
-        return redirect(url_for('admin_login'))
-    
-    # MASTER ADMIN CHECK
-    if session.get('admin_role') != 'master':
-        flash("Unauthorized: Only Master Admins can create new admins.", "error")
-        return redirect(url_for('admin_dashboard'))
-        
     username = request.form.get("username")
     email = request.form.get("email")
     password = request.form.get("password")
     
-    if not username or not email or not password:
+    if not all([username, email, password]):
         flash("All fields are required.", "error")
         return redirect(url_for('admin_dashboard'))
-        
-    password_hash = generate_password_hash(password)
-    db = get_db()
+    
     try:
-        
+        db = get_db()
         db.execute('INSERT INTO admins (username, email, role, password_hash) VALUES (?, ?, ?, ?)',
-                   (username, email, 'admin', password_hash))
+                   (username, email, 'admin', generate_password_hash(password)))
         db.commit()
         flash(f"Admin '{username}' successfully created.", "success")
     except sqlite3.IntegrityError:
         flash("Username or Email already exists.", "error")
-        
+    
     return redirect(url_for('admin_dashboard'))
 
 @app.route("/admin/delete/<int:admin_id>", methods=["POST"])
+@require_admin(master_only=True)
 def delete_admin(admin_id):
-    if not session.get('admin_logged_in'):
-        return redirect(url_for('admin_login'))
-    
-    # MASTER ADMIN CHECK
-    if session.get('admin_role') != 'master':
-        flash("Unauthorized: Only Master Admins can delete admins.", "error")
-        return redirect(url_for('admin_dashboard'))
-    
-    # Prevent deletion of self
     db = get_db()
+    # Prevent deletion of self
     current_user = db.execute('SELECT id FROM admins WHERE username = ?', (session.get('admin_username'),)).fetchone()
     if current_user and current_user['id'] == admin_id:
-         flash("Operation failed: You cannot delete your own account.", "error")
-         return redirect(url_for('admin_dashboard'))
-
-    # Execute deletion
+        flash("Operation failed: You cannot delete your own account.", "error")
+        return redirect(url_for('admin_dashboard'))
+    
     db.execute('DELETE FROM admins WHERE id = ?', (admin_id,))
     db.commit()
     flash("Admin user deleted successfully.", "success")
@@ -472,14 +463,7 @@ def submit_registration():
         
         # Save to DB
         try:
-            db = get_db()
-            db.execute('''INSERT INTO registrations 
-                          (full_name, email, phone, dob, address, sex, nationality, state, course, duration, level, qualification, goals, experience, info_source) 
-                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-                       (data.get('fullName'), data.get('email'), data.get('phoneNumber'), data.get('dob'), data.get('address'), 
-                        data.get('sex'), data.get('nationality'), data.get('state'), data.get('course'), data.get('duration'),
-                        data.get('educationLevel'), data.get('qualification'), data.get('courseGoals'), data.get('experience'), data.get('infoSource')))
-            db.commit()
+            insert_registration(data)
             print(f"Registration Submission Saved (JSON): {data.get('fullName')}")
             return jsonify({"status": "success", "message": "Registration received", "redirect": "/thank-you"})
         except Exception as e:
@@ -487,38 +471,32 @@ def submit_registration():
             return jsonify({"status": "error", "message": "An error occurred. Please try again later."}), 500
     
     # Fallback for standard form submission (if JS fails or is disabled)
-    # Anti-bot validation
     is_valid, error_msg = validate_anti_bot(request.form, is_json=False)
     if not is_valid:
         flash(error_msg or "Invalid submission detected.", "error")
         return redirect('/registration')
     
-    # Match the field names to what registration.html actually sends
-    full_name = request.form.get("fullName")
-    email = request.form.get("email")
-    phone = request.form.get("phoneNumber")
-    dob = request.form.get("dob")
-    address = request.form.get("address")
-    sex = request.form.get("sex")
-    nationality = request.form.get("nationality")
-    state = request.form.get("state")
-    course = request.form.get("course")
-    level = request.form.get("educationLevel")
-    qualification = request.form.get("qualification")
-    goals = request.form.get("courseGoals")
-    experience = request.form.get("experience")
-    experience = request.form.get("experience")
-    info_source = request.form.get("infoSource")
-    duration = request.form.get("duration")
-
     try:
-        db = get_db()
-        db.execute('''INSERT INTO registrations 
-                      (full_name, email, phone, dob, address, sex, nationality, state, course, duration, level, qualification, goals, experience, info_source) 
-                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-                   (full_name, email, phone, dob, address, sex, nationality, state, course, duration, level, qualification, goals, experience, info_source))
-        db.commit()
-        print(f"Registration Submission Saved (Form): {full_name}")
+        # Convert form data to dict for insert_registration
+        data = {
+            'full_name': request.form.get('fullName'),
+            'email': request.form.get('email'),
+            'phone': request.form.get('phoneNumber'),
+            'dob': request.form.get('dob'),
+            'address': request.form.get('address'),
+            'sex': request.form.get('sex'),
+            'nationality': request.form.get('nationality'),
+            'state': request.form.get('state'),
+            'course': request.form.get('course'),
+            'duration': request.form.get('duration'),
+            'level': request.form.get('educationLevel'),
+            'qualification': request.form.get('qualification'),
+            'goals': request.form.get('courseGoals'),
+            'experience': request.form.get('experience'),
+            'info_source': request.form.get('infoSource')
+        }
+        insert_registration(data)
+        print(f"Registration Submission Saved (Form): {data['full_name']}")
         flash("Registration submitted successfully!", "success")
     except Exception as e:
         app.logger.error(f"Error saving registration: {e}")
