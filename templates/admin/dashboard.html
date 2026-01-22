@@ -420,6 +420,29 @@
             </div>
         </div>
 
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div id="flash-messages" style="margin-bottom: 20px;">
+            {% for category, message in messages %}
+            <div class="flash-message {{ category }}" style="padding: 12px 20px; border-radius: 8px; margin-bottom: 10px; transition: opacity 0.5s ease, transform 0.5s ease; {% if category == 'success' %}background: #d4edda; color: #155724; border-left: 4px solid #28a745;{% elif category == 'error' %}background: #f8d7da; color: #721c24; border-left: 4px solid #dc3545;{% else %}background: #cce5ff; color: #004085; border-left: 4px solid #007bff;{% endif %}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        <script>
+            // Auto-dismiss flash messages after 4 seconds
+            setTimeout(function() {
+                document.querySelectorAll('.flash-message').forEach(function(msg) {
+                    msg.style.opacity = '0';
+                    msg.style.transform = 'translateY(-10px)';
+                    setTimeout(function() { msg.remove(); }, 500);
+                });
+            }, 4000);
+        </script>
+        {% endif %}
+        {% endwith %}
+
         <!-- Registrations Section -->
         <div class="dashboard-card">
             <div class="card-header">
