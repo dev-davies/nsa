@@ -2,7 +2,10 @@ import sqlite3
 print("--- APP STARTING ---")
 import os
 import time
-from flask import Flask, render_template, request, flash, redirect, url_for, jsonify, g, session
+import csv
+import io
+from datetime import datetime
+from flask import Flask, render_template, request, flash, redirect, url_for, jsonify, g, session, send_file
 from werkzeug.security import check_password_hash, generate_password_hash
 from itsdangerous import URLSafeTimedSerializer
 from flask_wtf.csrf import CSRFProtect, CSRFError
@@ -308,11 +311,165 @@ def admin_logout():
     flash("You have been logged out.", "success")
     return redirect(url_for('admin_login'))
 
+@app.route("/admin/export/csv", methods=["POST"])
+@require_admin()
+def export_registrations_csv():
+    """Export registrations to CSV with filtering options"""
+    db = get_db()
+    
+    # Get filter parameters
+    export_type = request.form.get('export_type', 'all')  # all, selected, date_range
+    selected_ids = request.form.getlist('selected_ids')
+    start_date = request.form.get('start_date')
+    end_date = request.form.get('end_date')
+    
+    # Build query based on export type
+    query = 'SELECT id, full_name, email, phone, course, submitted_at FROM registrations'
+    params = []
+    
+    if export_type == 'selected' and selected_ids:
+        placeholders = ','.join('?' * len(selected_ids))
+        query += f' WHERE id IN ({placeholders})'
+        params = [int(id) for id in selected_ids]
+    elif export_type == 'date_range':
+        query += ' WHERE submitted_at >= ? AND submitted_at < ?'
+        params = [start_date, end_date]
+    
+    query += ' ORDER BY submitted_at DESC'
+    
+    registrations = db.execute(query, params).fetchall()
+    
+    # Create CSV in memory
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Write header
+    writer.writerow(['ID', 'Full Name', 'Email', 'Phone', 'Course', 'Submitted At'])
+    
+    # Write data
+    for reg in registrations:
+        writer.writerow([reg['id'], reg['full_name'], reg['email'], reg['phone'], reg['course'], reg['submitted_at']])
+    
+    # Create response
+    output.seek(0)
+    mem = io.BytesIO(output.getvalue().encode('utf-8'))
+    mem.seek(0)
+    
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    filename = f'registrations_{timestamp}.csv'
+    
+    return send_file(
+        mem,
+        mimetype='text/csv',
+        as_attachment=True,
+        download_name=filename
+    )
+
+@app.route("/admin/export/pdf", methods=["POST"])
+@require_admin()
+def export_registrations_pdf():
+    """Export registrations to PDF with filtering options"""
+    try:
+        from reportlab.lib.pagesizes import letter, A4
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib.units import inch
+        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+        from reportlab.lib import colors
+    except ImportError:
+        return jsonify({'error': 'PDF export requires reportlab. Install it with: pip install reportlab'}), 400
+    
+    db = get_db()
+    
+    # Get filter parameters
+    export_type = request.form.get('export_type', 'all')
+    selected_ids = request.form.getlist('selected_ids')
+    start_date = request.form.get('start_date')
+    end_date = request.form.get('end_date')
+    
+    # Build query based on export type
+    query = 'SELECT id, full_name, email, phone, course, submitted_at FROM registrations'
+    params = []
+    
+    if export_type == 'selected' and selected_ids:
+        placeholders = ','.join('?' * len(selected_ids))
+        query += f' WHERE id IN ({placeholders})'
+        params = [int(id) for id in selected_ids]
+    elif export_type == 'date_range':
+        query += ' WHERE submitted_at >= ? AND submitted_at < ?'
+        params = [start_date, end_date]
+    
+    query += ' ORDER BY submitted_at DESC'
+    
+    registrations = db.execute(query, params).fetchall()
+    
+    # Create PDF in memory
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    elements = []
+    
+    # Title
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=16,
+        textColor=colors.HexColor('#2878EB'),
+        spaceAfter=20,
+    )
+    
+    elements.append(Paragraph("Course Registrations Report", title_style))
+    elements.append(Spacer(1, 0.3*inch))
+    
+    # Create table data
+    table_data = [['ID', 'Full Name', 'Email', 'Phone', 'Course', 'Submitted At']]
+    
+    for reg in registrations:
+        table_data.append([
+            str(reg['id']),
+            reg['full_name'],
+            reg['email'],
+            reg['phone'],
+            reg['course'],
+            reg['submitted_at']
+        ])
+    
+    # Create table
+    table = Table(table_data, colWidths=[0.5*inch, 1.2*inch, 1.2*inch, 0.9*inch, 1.2*inch, 1*inch])
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2878EB')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('FONTSIZE', (0, 1), (-1, -1), 8),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f0f0f0')]),
+    ]))
+    
+    elements.append(table)
+    
+    # Build PDF
+    doc.build(elements)
+    buffer.seek(0)
+    
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    filename = f'registrations_{timestamp}.pdf'
+    
+    return send_file(
+        buffer,
+        mimetype='application/pdf',
+        as_attachment=True,
+        download_name=filename
+    )
+
+
 @app.route("/admin/dashboard")
 @require_admin()
 def admin_dashboard():
     db = get_db()
-    registrations = db.execute('SELECT id, full_name, course, submitted_at FROM registrations ORDER BY submitted_at DESC').fetchall()
+    registrations = db.execute('SELECT id, full_name, email, phone, course, submitted_at FROM registrations ORDER BY submitted_at DESC').fetchall()
     messages = db.execute('SELECT * FROM messages ORDER BY submitted_at DESC').fetchall()
     admins = db.execute('SELECT * FROM admins').fetchall()
     return render_template("admin/dashboard.html", registrations=registrations, messages=messages, admins=admins)
@@ -504,6 +661,69 @@ def submit_registration():
         return redirect('/registration')
     
     return redirect('/thank-you')
+
+
+# Registration Management Routes
+@app.route("/admin/registration/<int:reg_id>/delete", methods=["POST"])
+@require_admin()
+def delete_registration(reg_id):
+    """Delete a registration"""
+    try:
+        db = get_db()
+        db.execute('DELETE FROM registrations WHERE id = ?', (reg_id,))
+        db.commit()
+        flash(f"Registration #{reg_id} deleted successfully.", "success")
+    except Exception as e:
+        app.logger.error(f"Error deleting registration: {e}")
+        flash("Error deleting registration.", "error")
+    
+    return redirect(url_for('admin_dashboard'))
+
+
+@app.route("/admin/registration/<int:reg_id>/edit", methods=["GET", "POST"])
+@require_admin()
+def edit_registration(reg_id):
+    """Edit a registration"""
+    db = get_db()
+    registration = db.execute('SELECT * FROM registrations WHERE id = ?', (reg_id,)).fetchone()
+    
+    if not registration:
+        flash("Registration not found.", "error")
+        return redirect(url_for('admin_dashboard'))
+    
+    if request.method == "POST":
+        try:
+            full_name = request.form.get('full_name')
+            email = request.form.get('email')
+            phone = request.form.get('phone')
+            course = request.form.get('course')
+            level = request.form.get('level')
+            dob = request.form.get('dob')
+            address = request.form.get('address')
+            sex = request.form.get('sex')
+            nationality = request.form.get('nationality')
+            state = request.form.get('state')
+            duration = request.form.get('duration')
+            qualification = request.form.get('qualification')
+            goals = request.form.get('goals')
+            experience = request.form.get('experience')
+            info_source = request.form.get('info_source')
+            
+            db.execute('''UPDATE registrations 
+                         SET full_name=?, email=?, phone=?, course=?, level=?, dob=?, 
+                             address=?, sex=?, nationality=?, state=?, duration=?, 
+                             qualification=?, goals=?, experience=?, info_source=?
+                         WHERE id = ?''',
+                      (full_name, email, phone, course, level, dob, address, sex, 
+                       nationality, state, duration, qualification, goals, experience, info_source, reg_id))
+            db.commit()
+            flash(f"Registration for {full_name} updated successfully.", "success")
+            return redirect(url_for('admin_dashboard'))
+        except Exception as e:
+            app.logger.error(f"Error updating registration: {e}")
+            flash("Error updating registration.", "error")
+    
+    return render_template("admin/edit_registration.html", registration=registration)
 
 
 # Unified route to serve SPA shell for all frontend paths

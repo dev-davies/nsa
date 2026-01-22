@@ -1,6 +1,31 @@
 (function ($) {
     "use strict";
 
+    // Global course navigation function
+    window.navigateToCourse = function() {
+        const select = document.getElementById('courseSelect');
+        if (!select) {
+            console.error('Course select element not found');
+            return;
+        }
+        
+        const courseUrl = select.value;
+        console.log('Course selected:', courseUrl);
+        
+        if (courseUrl) {
+            // Use loadPage if available (SPA mode), otherwise use direct navigation
+            if (typeof loadPage === 'function') {
+                console.log('Using SPA loadPage');
+                loadPage(courseUrl);
+            } else {
+                console.log('Using direct navigation');
+                window.location.href = courseUrl;
+            }
+        } else {
+            alert('Please select a course first');
+        }
+    };
+
     // Global initialization function for SPA
     window.initializeSiteScripts = function() {
         // Dropdown on mouse hover

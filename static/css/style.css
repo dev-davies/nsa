@@ -11411,6 +11411,7 @@ h6,
 .jumbotron {
   background: linear-gradient(rgba(40, 120, 235, 0.9), rgba(40, 120, 235, 0.9)), url(../img/bannerhere.png), no-repeat center center;
   background-size: cover;
+  overflow: visible;
 }
 
 .jumbotron.page-header {
@@ -11438,6 +11439,7 @@ h6,
   bottom: 0;
   background: url(../img/overlay-bottom.png) bottom center no-repeat;
   background-size: contain;
+  pointer-events: none;
 }
 
 .bg-image {
@@ -11453,6 +11455,51 @@ h6,
   bottom: 0;
   left: 0;
   border-top: 2px dashed #F14D5D;
+}
+
+/* Fix for select courses visibility in hero section */
+.jumbotron-fluid .input-group,
+.jumbotron-fluid .form-control,
+.jumbotron-fluid .btn {
+  position: relative;
+  z-index: 10;
+}
+
+/* Enhanced styling for course select dropdown */
+.jumbotron-fluid select.form-control {
+  color: #495057 !important;
+  background-color: #fff !important;
+  border: 1px solid #ced4da !important;
+  height: auto !important;
+  min-height: 48px !important;
+  padding: 15px 25px !important;
+  font-size: 16px !important;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='4' height='5' viewBox='0 0 4 5'%3e%3cpath fill='%23343a40' d='M2 0L0 2h4zm0 5L0 3h4z'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 8px 10px;
+  padding-right: 2rem;
+  cursor: pointer;
+}
+
+.jumbotron-fluid select.form-control:hover,
+.jumbotron-fluid select.form-control:focus {
+  border-color: #80bdff !important;
+  outline: 0;
+  box-shadow: 0 0 0 0.2rem rgba(40, 120, 235, 0.25) !important;
+}
+
+.jumbotron-fluid select.form-control option {
+  color: #495057;
+  background-color: #fff;
+  padding: 8px 5px;
+  line-height: 1.5;
+}
+
+.jumbotron-fluid select.form-control option:checked {
+  background: linear-gradient(#2878EB, #2878EB) #2878EB;
+  color: #fff;
 }
 
 .courses-item img {

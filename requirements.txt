@@ -3,4 +3,4 @@ flask-wtf
 flask-limiter
 itsdangerous
 werkzeug
-flask-cors
+flask-corsreportlab
