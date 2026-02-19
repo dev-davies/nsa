@@ -15,7 +15,8 @@ This guide takes you through deploying your Flask application to your main domai
 3.  **Create a Folder**:
     - Navigate to your home directory (`/home/yourusername/`).
     - Create a NEW folder named `novelacad_prod` (or similar).
-    - _Do NOT put this inside `public_html` yet._ Keeping it outside is cleaner for Python apps.
+    - **CRITICAL:** Do NOT upload your files directly into `public_html` or the `novel-techtraining.com` folder.
+    - _Why?_ For security, your application code should live _outside_ the public web root. The "Setup Python App" tool will link your domain (`novel-techtraining.com`) to this private folder (`novelacad_prod`) automatically.
 4.  **Upload**:
     - Go into `novelacad_prod`.
     - Upload `novelacad.zip`.
