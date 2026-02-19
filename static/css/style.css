@@ -318,6 +318,7 @@ select.is-invalid {
   max-height: 45px;
   max-width: 200px;
   display: block;
+  margin-top: 5px;
   margin: 0;
   padding: 0;
 }
