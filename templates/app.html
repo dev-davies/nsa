@@ -129,7 +129,7 @@
         };
 
         // Load page content dynamically
-        async function loadPage(pathname) {
+        async function loadPage(pathname, hash = '') {
             
             let normalizedPath = pathname;
             if (normalizedPath.length > 1 && normalizedPath.endsWith('/')) {
@@ -137,11 +137,30 @@
             }
             
             const page = routes[normalizedPath] || 'home';
-            console.log(`Loading page: ${page} (path: ${pathname} -> ${normalizedPath})`);
+            console.log(`Loading page: ${page} (path: ${pathname} -> ${normalizedPath}) hash: ${hash}`);
+            
+            // If we're navigating to home with a hash, and home is already loaded, just scroll
+            const currentPath = window.location.pathname;
+            const currentNormalized = currentPath.length > 1 && currentPath.endsWith('/') ? currentPath.slice(0, -1) : currentPath;
+            const currentPage = routes[currentNormalized] || 'home';
+
+            if (page === 'home' && currentPage === 'home' && hash && pageCache['home']) {
+                // Already on home page with content loaded — just scroll to the section
+                if (window.location.hash !== hash) {
+                    window.history.pushState({ page: 'home' }, '', '/' + hash);
+                }
+                handleHashScroll(hash);
+                return;
+            }
             
             // Check cache first
             if (pageCache[page]) {
                 renderPage(pageCache[page]);
+                // Update URL if path changed
+                if (window.location.pathname !== pathname || window.location.hash !== hash) {
+                    window.history.pushState({ page }, `Novel Academy - ${page}`, pathname + hash);
+                }
+                handleHashScroll(hash);
                 return;
             }
 
@@ -152,6 +171,7 @@
             try {
                 let endpoint;
                 if (page.startsWith('course-') || (normalizedPath && normalizedPath.startsWith('/course/'))) {
+                    // Handle /course/slug URLs by extracting the slug
                     const courseSlug = normalizedPath.replace('/course/', '');
                     endpoint = `/api/course/${courseSlug}`;
                 } else {
@@ -176,10 +196,14 @@
                 // Render the content
                 renderPage(data.content);
 
-                // Update browser history
+                // Update browser history (only if we are changing path)
                 if (window.location.pathname !== pathname) {
-                    window.history.pushState({ page }, `Novel Academy - ${page}`, pathname || '/');
+                    window.history.pushState({ page }, `Novel Academy - ${page}`, pathname);
                 }
+                
+                // Handle scrolling to hash after render
+                handleHashScroll(hash);
+
             } catch (error) {
                 console.error('Page load error:', error);
                 // If this is the initial load and there's an error, try loading home page
@@ -192,6 +216,7 @@
                         if (homeData.content) {
                             renderPage(homeData.content);
                             pageCache['home'] = homeData.content;
+                            handleHashScroll(hash);
                             return;
                         }
                     } catch (e) {
@@ -202,6 +227,31 @@
             } finally {
                 loader.classList.remove('active');
                 contentDiv.classList.remove('loading');
+            }
+        }
+
+        // Helper to scroll to hash element
+        function handleHashScroll(hash) {
+            if (hash) {
+                // Wait a tick for DOM update
+                setTimeout(() => {
+                    // Try to find element with ID
+                    const element = document.querySelector(hash);
+                    if (element) {
+                        element.scrollIntoView({ behavior: 'smooth' });
+                    } else {
+                        // Fallback: Check if it's a name attribute (older HTML style)
+                        const nameElement = document.querySelector(`[name="${hash.substring(1)}"]`);
+                        if (nameElement) {
+                             nameElement.scrollIntoView({ behavior: 'smooth' });
+                        } else {
+                            // If simply #top or empty, scroll top
+                            if (hash === '#top') window.scrollTo(0, 0);
+                        }
+                    }
+                }, 100);
+            } else {
+                window.scrollTo(0, 0);
             }
         }
 
@@ -225,9 +275,6 @@
                 console.log("Initializing registration page functionality");
                 window.initializeRegistration();
             }
-            
-            // Scroll to top
-            window.scrollTo(0, 0);
         }
 
         // Navigation handler - intercept navbar links
@@ -237,22 +284,37 @@
 
             const href = link.getAttribute('href');
             
-            // Only handle internal navigation
-            if (href && href.startsWith('/') && !href.startsWith('//') && !href.includes('admin') && !href.includes('register')) {
+            // Ignore if external link, empty, or special protocols
+            if (!href || href.startsWith('http') || href.startsWith('mailto:') || href.startsWith('tel:')) {
+                // If it IS a full URL but matches our origin, we treat it as internal
+                if (link.href.startsWith(window.location.origin)) {
+                    // Let it fall through to internal handling
+                } else {
+                    return; // External
+                }
+            }
+
+            // Parse the URL to separate path and hash
+            const url = new URL(link.href, window.location.origin);
+            const path = url.pathname;
+            const hash = url.hash;
+
+            // Only handle internal navigation that isn't admin/download/etc
+            if (!path.includes('admin') && !path.includes('static')) {
                 e.preventDefault();
-                loadPage(href);
+                loadPage(path, hash);
             }
         });
 
         // Handle browser back/forward buttons
         window.addEventListener('popstate', function(e) {
             const page = e.state?.page || 'home';
-            loadPage(location.pathname);
+            loadPage(location.pathname, location.hash);
         });
 
         // Initial page load
         window.addEventListener('load', function() {
-            loadPage(window.location.pathname);
+            loadPage(window.location.pathname, window.location.hash);
         });
     </script>
 
