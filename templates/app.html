@@ -196,9 +196,10 @@
                 // Render the content
                 renderPage(data.content);
 
-                // Update browser history (only if we are changing path)
-                if (window.location.pathname !== pathname) {
-                    window.history.pushState({ page }, `Novel Academy - ${page}`, pathname);
+                // Update browser history with path and hash
+                const newUrl = hash ? pathname + hash : pathname;
+                if (window.location.pathname !== pathname || window.location.hash !== hash) {
+                    window.history.pushState({ page }, `Novel Academy - ${page}`, newUrl);
                 }
                 
                 // Handle scrolling to hash after render
@@ -233,25 +234,18 @@
         // Helper to scroll to hash element
         function handleHashScroll(hash) {
             if (hash) {
-                // Wait a tick for DOM update
+                // Use a generous delay to allow DOM + plugins (carousel, waypoints) to fully render
                 setTimeout(() => {
-                    // Try to find element with ID
-                    const element = document.querySelector(hash);
-                    if (element) {
-                        element.scrollIntoView({ behavior: 'smooth' });
-                    } else {
-                        // Fallback: Check if it's a name attribute (older HTML style)
-                        const nameElement = document.querySelector(`[name="${hash.substring(1)}"]`);
-                        if (nameElement) {
-                             nameElement.scrollIntoView({ behavior: 'smooth' });
-                        } else {
-                            // If simply #top or empty, scroll top
-                            if (hash === '#top') window.scrollTo(0, 0);
-                        }
+                    const target = document.querySelector(hash) ||
+                                   document.querySelector(`[name="${hash.substring(1)}"]`);
+                    if (target) {
+                        const navbarHeight = document.querySelector('nav') ? document.querySelector('nav').offsetHeight : 0;
+                        const top = target.getBoundingClientRect().top + window.pageYOffset - navbarHeight - 10;
+                        window.scrollTo({ top: top, behavior: 'smooth' });
                     }
-                }, 100);
+                }, 400);
             } else {
-                window.scrollTo(0, 0);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             }
         }
 
