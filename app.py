@@ -171,13 +171,13 @@ def validate_anti_bot(form_data, is_json=False):
         
         elapsed_time = time.time() - start_time
         
-        # Too fast (less than 5 seconds) - likely a bot
-        if elapsed_time < 5:
+        # Too fast (less than 2 seconds) - likely a bot
+        if elapsed_time < 2:
             app.logger.warning(f"Bot suspected: Form submitted in {elapsed_time:.2f}s (too fast)")
             return False, "Form submitted too quickly. Please take your time filling out all fields carefully."
         
-        # Suspiciously fast for registration form (less than 10 seconds for complex forms)
-        if elapsed_time < 10 and 'fullName' in str(form_data):
+        # Suspiciously fast for registration form (less than 3 seconds for complex forms)
+        if elapsed_time < 3 and 'fullName' in str(form_data):
             app.logger.warning(f"Bot suspected: Registration form submitted in {elapsed_time:.2f}s")
             return False, "Form submitted too quickly. Please ensure all fields are completed accurately."
         

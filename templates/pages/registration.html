@@ -455,7 +455,10 @@
                     })
                         .then(response => response.json())
                         .then(result => {
-                            if (result.redirect) {
+                            if (result.status === 'error') {
+                                showFeedback('error', result.message || 'An error occurred. Please try again.');
+                                // Re-enable button if it was disabled
+                            } else if (result.redirect) {
                                 if (typeof window.loadPage === 'function') {
                                     window.loadPage(result.redirect);
                                 } else {
