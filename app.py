@@ -674,6 +674,33 @@ def submit_registration():
         try:
             insert_registration(data)
             print(f"Registration Submission Saved (JSON): {data.get('fullName')}")
+            
+            # Send Thank You Email
+            try:
+                full_name = data.get('fullName', '')
+                first_name = full_name.split()[0] if full_name else 'Applicant'
+                email = data.get('email')
+                
+                msg = Message(
+                    subject="Novel Academy: Application Received",
+                    recipients=[email]
+                )
+                msg.body = f'''Hi {first_name},
+
+Thank you for submitting your details to Novel Academy. We have successfully received your application.
+
+Our team will review your information shortly. We will be in touch soon to outline the next steps in the admissions process and let you know if we need anything else from you.
+
+If you have any immediate questions, feel free to reply directly to this email.
+
+Best regards,
+
+The Novel Academy Team
+'''
+                mail.send(msg)
+            except Exception as e:
+                app.logger.error(f"Failed to send registration thank you email (JSON): {e}")
+
             return jsonify({"status": "success", "message": "Registration received", "redirect": "/thank-you"})
         except Exception as e:
             app.logger.error(f"Error saving registration: {e}")
@@ -706,6 +733,33 @@ def submit_registration():
         }
         insert_registration(data)
         print(f"Registration Submission Saved (Form): {data['full_name']}")
+        
+        # Send Thank You Email
+        try:
+            full_name = data.get('full_name', '')
+            first_name = full_name.split()[0] if full_name else 'Applicant'
+            email = data.get('email')
+            
+            msg = Message(
+                subject="Novel Academy: Application Received",
+                recipients=[email]
+            )
+            msg.body = f'''Hi {first_name},
+
+Thank you for submitting your details to Novel Academy. We have successfully received your application.
+
+Our team will review your information shortly. We will be in touch soon to outline the next steps in the admissions process and let you know if we need anything else from you.
+
+If you have any immediate questions, feel free to reply directly to this email.
+
+Best regards,
+
+The Novel Academy Team
+'''
+            mail.send(msg)
+        except Exception as e:
+            app.logger.error(f"Failed to send registration thank you email (Form): {e}")
+
         flash("Registration submitted successfully!", "success")
     except Exception as e:
         app.logger.error(f"Error saving registration: {e}")
