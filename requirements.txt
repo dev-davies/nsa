@@ -4,3 +4,4 @@ flask-limiter
 itsdangerous
 werkzeug
 reportlab
+Flask-Mail

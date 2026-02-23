@@ -11,6 +11,7 @@ from itsdangerous import URLSafeTimedSerializer
 from flask_wtf.csrf import CSRFProtect, CSRFError
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_mail import Mail, Message
 
 # Ensure Flask uses the correct template folder
 app = Flask(__name__, template_folder="templates")
@@ -19,6 +20,17 @@ s = URLSafeTimedSerializer(app.secret_key)
 
 # Initialize CSRF Protection
 csrf = CSRFProtect(app)
+
+# Email Configuration
+app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
+app.config['MAIL_PORT'] = int(os.environ.get('MAIL_PORT', 587))
+app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS', 'True').lower() in ['true', '1', 't']
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', 'novelsolaracademy@gmail.com')
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', '') # Set this in cPanel
+app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER', 'info@novel-academy.com')
+
+# Initialize Flask-Mail
+mail = Mail(app)
 
 # Initialize Rate Limiter
 limiter = Limiter(
@@ -558,11 +570,24 @@ def forgot_password():
         if user:
             token = s.dumps(email, salt='email-confirm')
             link = url_for('reset_password', token=token, _external=True)
-            # In a real app, send this via email.
-            print(f"----- PASSWORD RESET LINK FOR {email} -----")
-            print(link)
-            print("---------------------------------------------")
-            flash("A password reset link has been sent to your email (check server console).", "success")
+            
+            try:
+                msg = Message(
+                    subject="Password Reset Request - Novel Academy",
+                    recipients=[email]
+                )
+                msg.body = f'''To reset your password, visit the following link:
+
+{link}
+
+If you did not make this request then simply ignore this email and no changes will be made.
+'''
+                mail.send(msg)
+                flash("A password reset link has been sent to your email.", "success")
+            except Exception as e:
+                app.logger.error(f"Failed to send password reset email: {e}")
+                print(f"FAILED TO SEND EMAIL. LINK WAS: {link}")
+                flash("Failed to send the reset email. Please contact the system administrator.", "error")
         else:
             flash("Email not found.", "error")
             
