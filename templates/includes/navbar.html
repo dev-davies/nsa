@@ -34,14 +34,23 @@
 <style>
     @media (max-width: 991.98px) {
         .mobile-center-logo {
-            position: absolute !important;
-            left: 50% !important;
-            transform: translateX(-50%) !important;
-            margin-left: 0 !important;
+            margin: 0 auto !important;
+            display: block;
         }
-        .navbar-light .navbar-toggler {
-            margin-left: auto !important;
+        .navbar-expand-lg {
+            justify-content: center !important;
+            position: relative;
+        }
+        .navbar-toggler {
+            position: absolute !important;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
             z-index: 10;
+        }
+        #navbarCollapse {
+            width: 100%;
+            margin-top: 15px; /* Spacing when expanded */
         }
     }
 </style>
