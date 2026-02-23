@@ -244,6 +244,7 @@
 
         <div class="form-card">
             <form method="POST" action="{{ url_for('edit_registration', reg_id=registration[0]) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <!-- Personal Information Section -->
                 <div class="form-section">
                     <h2><i class="fas fa-user" style="margin-right: 8px;"></i>Personal Information</h2>
