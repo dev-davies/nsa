@@ -238,8 +238,8 @@ def insert_registration(data):
     db = get_db()
     db.execute('''INSERT INTO registrations 
                   (full_name, email, phone, dob, address, sex, nationality, state, course, duration, 
-                   level, qualification, goals, experience, info_source) 
-                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                   level, qualification, goals, experience, info_source, submitted_at) 
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', '+1 hours'))''',
                (data.get('full_name') or data.get('fullName'), 
                 data.get('email'), 
                 data.get('phone') or data.get('phoneNumber'), 
@@ -641,7 +641,7 @@ def submit_contact():
     # Save to DB
     try:
         db = get_db()
-        db.execute('INSERT INTO messages (name, email, subject, message) VALUES (?, ?, ?, ?)',
+        db.execute("INSERT INTO messages (name, email, subject, message, submitted_at) VALUES (?, ?, ?, ?, datetime('now', '+1 hours'))",
                    (name, email, subject, message))
         db.commit()
         print(f"Contact Form Submission Saved: {name}, {email}")
