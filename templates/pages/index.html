@@ -455,16 +455,3 @@
             </div>
         </div>
     </div>
-    <!-- Contact End -->
-
-    <!-- Contact Form Anti-Bot Protection -->
-    <script>
-        // Initialize form start time when contact form is loaded
-        (function() {
-            const contactForm = document.getElementById('contactForm');
-            const formStartTime = document.getElementById('contact_form_start_time');
-            if (contactForm && formStartTime && !formStartTime.value) {
-                formStartTime.value = (Date.now() / 1000).toString(); // Unix timestamp in seconds
-            }
-        })();
-    </script>

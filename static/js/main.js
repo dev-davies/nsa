@@ -182,7 +182,13 @@
                 loop: true
             });
         }
-        
+        // Contact Form Anti-Bot Initialization
+        const contactForm = document.getElementById('contactForm');
+        const formStartTime = document.getElementById('contact_form_start_time');
+        if (contactForm && formStartTime && !formStartTime.value) {
+            formStartTime.value = (Date.now() / 1000).toString(); // Unix timestamp in seconds
+        }
+
         // Refresh Waypoints
         Waypoint.refreshAll();
     };
