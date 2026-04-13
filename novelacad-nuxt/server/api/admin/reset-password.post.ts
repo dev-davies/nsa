@@ -19,10 +19,14 @@ export default defineEventHandler(async (event) => {
   const tokenHash = crypto.createHash('sha256').update(token).digest('hex')
 
   const db = getDb()
-  const admin = db.prepare(`
+  const adminRes = await db.execute({
+    sql: `
     SELECT id FROM admins 
     WHERE reset_token = ? AND reset_token_expires > datetime('now')
-  `).get(tokenHash) as { id: number } | undefined
+  `,
+    args: [tokenHash]
+  })
+  const admin = adminRes.rows[0] as unknown as { id: number } | undefined
 
   if (!admin) {
     throw createError({
@@ -34,11 +38,14 @@ export default defineEventHandler(async (event) => {
   // Hash new password and update database
   const passwordHash = await hashPassword(password)
 
-  db.prepare(`
+  await db.execute({
+    sql: `
     UPDATE admins 
     SET password_hash = ?, reset_token = NULL, reset_token_expires = NULL
     WHERE id = ?
-  `).run(passwordHash, admin.id)
+  `,
+    args: [passwordHash, admin.id]
+  })
 
   return {
     status: 'success',

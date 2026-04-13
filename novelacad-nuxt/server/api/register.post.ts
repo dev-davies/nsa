@@ -18,18 +18,21 @@ export default defineEventHandler(async (event) => {
   }
 
   const db = getDb()
-  db.prepare(`
+  await db.execute({
+    sql: `
     INSERT INTO registrations
       (full_name, email, phone, dob, address, sex, nationality, state, course,
        duration, level, qualification, goals, experience, info_source, submitted_at)
     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, datetime('now', '+1 hours'))
-  `).run(
-    body.fullName, body.email, body.phoneNumber, body.dob,
-    body.address || '', body.sex, body.nationality, body.state,
-    body.course, body.duration || null, body.educationLevel,
-    body.qualification, body.courseGoals, body.experience || null,
-    body.infoSource
-  )
+  `,
+    args: [
+      body.fullName, body.email, body.phoneNumber, body.dob,
+      body.address || '', body.sex, body.nationality, body.state,
+      body.course, body.duration || null, body.educationLevel,
+      body.qualification, body.courseGoals, body.experience || null,
+      body.infoSource
+    ]
+  })
 
   // Send applicant confirmation email
   const nameParts = String(body.fullName).split(' ')

@@ -6,7 +6,11 @@ export default defineEventHandler(async (event) => {
   }
 
   const db = getDb()
-  const admin = db.prepare(`SELECT id, username, email FROM admins WHERE email = ?`).get(email) as {
+  const adminRes = await db.execute({
+    sql: `SELECT id, username, email FROM admins WHERE email = ?`,
+    args: [email]
+  })
+  const admin = adminRes.rows[0] as unknown as {
     id: number
     username: string
     email: string
@@ -22,11 +26,14 @@ export default defineEventHandler(async (event) => {
   const expiresAt = getResetTokenExpiry()
 
   // Store hashed token in database (never store plaintext tokens)
-  db.prepare(`
+  await db.execute({
+    sql: `
     UPDATE admins 
     SET reset_token = ?, reset_token_expires = ?
     WHERE id = ?
-  `).run(hash, expiresAt, admin.id)
+  `,
+    args: [hash, expiresAt, admin.id]
+  })
 
   // Send reset email
   const config = useRuntimeConfig()

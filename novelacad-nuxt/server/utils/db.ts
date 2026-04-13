@@ -1,24 +1,24 @@
-import Database from 'better-sqlite3'
-import fs from 'node:fs'
-import path from 'node:path'
+import { createClient, type Client } from '@libsql/client'
 
-let db: Database.Database | null = null
+let client: Client | null = null
 
-export function getDb(): Database.Database {
-  if (db) return db
+export function getDb(): Client {
+  if (client) return client
 
   const config = useRuntimeConfig()
-  const dbPath = (config.dbPath as string) || './database.db'
+  
+  // Use environment variables for Turso
+  const url = (config.tursoUrl as string) || process.env.DATABASE_URL
+  const authToken = (config.tursoToken as string) || process.env.DATABASE_TOKEN
 
-  // Ensure the directory exists
-  const dir = path.dirname(path.resolve(dbPath))
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true })
+  if (!url) {
+    throw new Error('DATABASE_URL is not defined. Please check your .env file.')
   }
 
-  db = new Database(path.resolve(dbPath))
-  db.pragma('journal_mode = WAL')
-  db.pragma('foreign_keys = ON')
+  client = createClient({
+    url,
+    authToken,
+  })
 
-  return db
+  return client
 }

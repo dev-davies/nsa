@@ -31,7 +31,11 @@ export default defineEventHandler(async (event) => {
 
   sqlQuery += ` ORDER BY submitted_at DESC`
 
-  const registrations = db.prepare(sqlQuery).all(...params) as Array<{
+  const res = await db.execute({
+    sql: sqlQuery,
+    args: params
+  })
+  const registrations = res.rows as unknown as Array<{
     id: number
     full_name: string
     email: string

@@ -7,7 +7,11 @@ export default defineEventHandler(async (event) => {
   }
 
   const db = getDb()
-  const admin = db.prepare(`SELECT * FROM admins WHERE username = ?`).get(username) as {
+  const adminRes = await db.execute({
+    sql: `SELECT * FROM admins WHERE username = ?`,
+    args: [username]
+  })
+  const admin = adminRes.rows[0] as unknown as {
     id: number; username: string; email: string; role: string; password_hash: string
   } | undefined
 

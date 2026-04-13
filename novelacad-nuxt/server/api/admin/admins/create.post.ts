@@ -11,9 +11,10 @@ export default defineEventHandler(async (event) => {
 
   const db = getDb()
   try {
-    db.prepare(`INSERT INTO admins (username, email, role, password_hash) VALUES (?,?,?,?)`).run(
-      username, email, validRole, hash
-    )
+    await db.execute({
+      sql: `INSERT INTO admins (username, email, role, password_hash) VALUES (?,?,?,?)`,
+      args: [username, email, validRole, hash]
+    })
   } catch (e: any) {
     if (e.message?.includes('UNIQUE constraint')) {
       throw createError({ statusCode: 409, statusMessage: 'Username or email already exists.' })

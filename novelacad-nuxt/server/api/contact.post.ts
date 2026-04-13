@@ -12,9 +12,11 @@ export default defineEventHandler(async (event) => {
   }
 
   const db = getDb()
-  db.prepare(`INSERT INTO messages (name, email, subject, message, submitted_at)
-              VALUES (?, ?, ?, ?, datetime('now', '+1 hours'))`)
-    .run(name, email, subject || '', message)
+  await db.execute({
+    sql: `INSERT INTO messages (name, email, subject, message, submitted_at)
+          VALUES (?, ?, ?, ?, datetime('now', '+1 hours'))`,
+    args: [name, email, subject || '', message]
+  })
 
   // Send notification email (non-blocking failure)
   try {

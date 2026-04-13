@@ -4,11 +4,18 @@ export default defineEventHandler(async (event) => {
   const db = getDb()
 
   // Prevent self-deletion
-  const current = db.prepare(`SELECT id FROM admins WHERE username = ?`).get(session.data.adminUsername) as { id: number } | undefined
+  const currentRes = await db.execute({
+    sql: `SELECT id FROM admins WHERE username = ?`,
+    args: [session.data.adminUsername]
+  })
+  const current = currentRes.rows[0] as unknown as { id: number } | undefined
   if (current && String(current.id) === String(id)) {
     throw createError({ statusCode: 400, statusMessage: 'You cannot delete your own account.' })
   }
 
-  db.prepare(`DELETE FROM admins WHERE id = ?`).run(id)
+  await db.execute({
+    sql: `DELETE FROM admins WHERE id = ?`,
+    args: [id]
+  })
   return { status: 'success', message: 'Admin deleted.' }
 })
