@@ -1,14 +1,14 @@
 # Novel Academy - Deployment Guide
 
-This guide covers deploying the Novel Academy application to a production environment.
+This guide covers deploying the Novel Academy Nuxt/Nitro application to production.
 
 ## Table of Contents
 
 - [Prerequisites](#prerequisites)
 - [Deployment Options](#deployment-options)
-- [Option 1: Linux Server (Ubuntu/Debian)](#option-1-linux-server-ubuntudebian)
+- [Option 1: Linux Server (Recommended)](#option-1-linux-server-recommended)
 - [Option 2: Windows Server](#option-2-windows-server)
-- [Option 3: Platform as a Service (PaaS)](#option-3-platform-as-a-service-paas)
+- [Option 3: PaaS (Recommended)](#option-3-paas-recommended)
 - [Post-Deployment](#post-deployment)
 - [Monitoring & Maintenance](#monitoring--maintenance)
 
@@ -16,8 +16,8 @@ This guide covers deploying the Novel Academy application to a production enviro
 
 ## Prerequisites
 
-- Server with minimum 1GB RAM, 1 CPU core, 10GB storage
-- Python 3.8 or higher
+- **Node.js 18+** (required for Nuxt/Nitro)
+- Server with minimum 512MB RAM, 1 CPU core, 5GB storage
 - Domain name (optional but recommended)
 - SSL certificate (Let's Encrypt recommended)
 
@@ -25,19 +25,17 @@ This guide covers deploying the Novel Academy application to a production enviro
 
 ## Deployment Options
 
-### Quick Comparison
-
-| Option                | Difficulty | Cost       | Best For                           |
-| --------------------- | ---------- | ---------- | ---------------------------------- |
-| Linux Server (VPS)    | Medium     | Low        | Full control, custom setup         |
-| Windows Server        | Medium     | Medium     | Windows environment                |
-| PaaS (Heroku, Render) | Easy       | Low-Medium | Quick deployment, less maintenance |
+| Option              | Difficulty | Cost       | Best For                           |
+|---------------------|-----------|-----------|-----------------------------------|
+| Linux VPS (Node.js) | Easy      | Low       | Full control, cost-effective      |
+| Windows Server      | Medium    | Medium    | Windows environment               |
+| PaaS (Vercel)       | Very Easy | Low/Free  | **Recommended** - automatic deploys, CDN |
+| PaaS (Render)       | Easy      | Low       | Good alternative                  |
+| PaaS (Railway)      | Easy      | Low       | Another good option               |
 
 ---
 
-## Option 1: Linux Server (Ubuntu/Debian)
-
-This is the recommended approach for production deployments.
+## Option 1: Linux Server (Recommended)
 
 ### Step 1: Server Setup
 
@@ -45,17 +43,22 @@ This is the recommended approach for production deployments.
 # Update system packages
 sudo apt update && sudo apt upgrade -y
 
-# Install required packages
-sudo apt install -y python3 python3-pip python3-venv nginx supervisor git
+# Install Node.js (latest LTS)
+curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
+sudo apt install -y nodejs
 
-# Install certbot for SSL (optional)
+# Install PM2 (process manager) and NGINX
+sudo apt install -y npm nginx git
+sudo npm install -g pm2
+
+# Install certbot for SSL (Let's Encrypt)
 sudo apt install -y certbot python3-certbot-nginx
 ```
 
 ### Step 2: Create Application User
 
 ```bash
-# Create dedicated user for the application
+# Create dedicated user
 sudo useradd -m -s /bin/bash novelacad
 sudo su - novelacad
 ```
@@ -63,141 +66,393 @@ sudo su - novelacad
 ### Step 3: Deploy Application Code
 
 ```bash
-# Clone or upload your code
+# Clone repository
 cd /home/novelacad
-git clone <your-repo-url> app
-# OR upload via SCP/FTP
-
-cd app
-
-# Create virtual environment
-python3 -m venv venv
-source venv/bin/activate
+git clone https://github.com/novelacadhost-sketch/novelacad.git app
+cd app/novelacad-nuxt
 
 # Install dependencies
-pip install -r requirements.txt
-pip install gunicorn  # Production WSGI server
+npm install
+
+# Build for production
+npm run build
 ```
 
 ### Step 4: Environment Configuration
 
-Create environment file:
+Create `.env` file:
 
 ```bash
-nano /home/novelacad/app/.env
+# From /home/novelacad/app/novelacad-nuxt directory
+nano .env
 ```
 
-Add the following:
+Add:
 
 ```env
-# Flask Configuration
-SECRET_KEY=your-very-long-random-secret-key-change-this
-FLASK_DEBUG=False
-FLASK_ENV=production
+# Session & Security
+SESSION_SECRET=your-very-long-random-secret-key-change-this
 
-# Database
-DATABASE=/home/novelacad/app/database.db
+# Database Path
+DB_PATH=./database.db
 
 # Email Configuration (optional)
 MAIL_SERVER=smtp.gmail.com
 MAIL_PORT=587
-MAIL_USE_TLS=True
 MAIL_USERNAME=your-email@gmail.com
 MAIL_PASSWORD=your-app-password
+MAIL_DEFAULT_SENDER=info@novel-academy.com
 
-# Application URL
-APP_URL=https://yourdomain.com
+# Node Environment
+NODE_ENV=production
+
+# Public API URL
+NUXT_PUBLIC_API_BASE=https://yourdomain.com
 ```
 
-**Generate a secure secret key:**
-
+**Generate SECRET_KEY:**
 ```bash
-python3 -c "import secrets; print(secrets.token_hex(32))"
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
 ### Step 5: Initialize Database
 
 ```bash
-# While in /home/novelacad/app with venv activated
-python init_db.py
+# From /home/novelacad/app/novelacad-nuxt directory
+# The database will auto-initialize on first Nitro startup
+# To prepopulate with schema, use the schema.sql file:
 
-# Create first admin user
-python manage_admins.py
+sqlite3 database.db < ../schema.sql
+
+# Create first admin user via direct DB insertion or through API
+# Option: Use the contact form and then create admin via script
 ```
 
-### Step 6: Configure Gunicorn
-
-Create Gunicorn configuration:
+### Step 6: Start with PM2
 
 ```bash
-nano /home/novelacad/app/gunicorn_config.py
+# Start the application
+pm2 start "npm run preview" --name "novelacad" --cwd /home/novelacad/app/novelacad-nuxt
+
+# Make it auto-start on reboot
+pm2 startup
+pm2 save
+
+# Check status
+pm2 list
 ```
 
-```python
-# Gunicorn configuration file
-import multiprocessing
+### Step 7: Configure Nginx as Reverse Proxy
 
-bind = "127.0.0.1:8000"
-workers = multiprocessing.cpu_count() * 2 + 1
-worker_class = "sync"
-worker_connections = 1000
-timeout = 30
-keepalive = 2
-
-# Logging
-accesslog = "/home/novelacad/app/logs/access.log"
-errorlog = "/home/novelacad/app/logs/error.log"
-loglevel = "info"
-
-# Process naming
-proc_name = "novelacad"
-
-# Server mechanics
-daemon = False
-pidfile = "/home/novelacad/app/gunicorn.pid"
-```
-
-Create logs directory:
-
-```bash
-mkdir -p /home/novelacad/app/logs
-```
-
-### Step 7: Configure Supervisor
-
-Exit to root user and create supervisor config:
+Exit to root and create Nginx config:
 
 ```bash
 exit  # Exit from novelacad user
-sudo nano /etc/supervisor/conf.d/novelacad.conf
+sudo nano /etc/nginx/sites-available/novelacad
 ```
 
-```ini
-[program:novelacad]
-command=/home/novelacad/app/venv/bin/gunicorn -c /home/novelacad/app/gunicorn_config.py app:app
-directory=/home/novelacad/app
-user=novelacad
-autostart=true
-autorestart=true
-stopasgroup=true
-killasgroup=true
-stderr_logfile=/home/novelacad/app/logs/supervisor_error.log
-stdout_logfile=/home/novelacad/app/logs/supervisor_out.log
-environment=PATH="/home/novelacad/app/venv/bin"
+```nginx
+upstream novelacad {
+    server 127.0.0.1:3000;
+    keepalive 64;
+}
+
+server {
+    listen 80;
+    server_name yourdomain.com www.yourdomain.com;
+
+    # Redirect HTTP to HTTPS
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name yourdomain.com www.yourdomain.com;
+
+    # SSL certificate paths (set up with certbot)
+    ssl_certificate /etc/letsencrypt/live/yourdomain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/yourdomain.com/privkey.pem;
+
+    # SSL configuration
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+
+    # Security headers
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+
+    # Logging
+    access_log /var/log/nginx/novelacad_access.log;
+    error_log /var/log/nginx/novelacad_error.log;
+
+    # Gzip compression
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
+
+    location / {
+        proxy_pass http://novelacad;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
 ```
 
-Start the application:
+Enable the config:
 
 ```bash
-sudo supervisorctl reread
-sudo supervisorctl update
-sudo supervisorctl start novelacad
-sudo supervisorctl status novelacad
+sudo ln -s /etc/nginx/sites-available/novelacad /etc/nginx/sites-enabled/
+sudo nginx -t  # Test configuration
+sudo systemctl restart nginx
 ```
 
-### Step 8: Configure Nginx
+### Step 8: Set Up SSL (Let's Encrypt)
 
 ```bash
+sudo certbot certonly --nginx -d yourdomain.com -d www.yourdomain.com
+
+# Auto-renewal is set up automatically
+sudo systemctl enable certbot.timer
+```
+
+---
+
+## Option 2: Windows Server
+
+### Prerequisites
+- Windows Server 2016+ with IIS 10+
+- Node.js 18+ installed
+- Administrator access
+
+### Deployment Steps
+
+```powershell
+# Navigate to deployment directory
+cd C:\inetpub\wwwroot
+
+# Clone repository
+git clone https://github.com/novelacadhost-sketch/novelacad.git novelacad
+cd novelacad\novelacad-nuxt
+
+# Create .env file
+New-Item -Path . -Name ".env" -ItemType "file" -Value @"
+SESSION_SECRET=your-secret-key
+DB_PATH=./database.db
+MAIL_SERVER=smtp.gmail.com
+MAIL_PORT=587
+NODE_ENV=production
+"@
+
+# Install dependencies
+npm install
+
+# Build application
+npm run build
+
+# Start with PM2 (or use IIS URL Rewrite module)
+npm install -g pm2
+pm2 start "npm run preview" --name "novelacad"
+pm2 save
+```
+
+Configure IIS as reverse proxy (see Node.js/Nuxt hosting guides for detailed IIS configuration).
+
+---
+
+## Option 3: PaaS (Recommended) ⭐
+
+### Vercel (Easiest - Recommended)
+
+Vercel is optimized for Nuxt and offers free tier with automatic deploys.
+
+1. **Push to GitHub:**
+```bash
+git add .
+git commit -m "Ready for deployment"
+git push origin feature/nuxt-migration
+```
+
+2. **Create Vercel Account:**
+   - Go to [vercel.com](https://vercel.com)
+   - Sign up with GitHub
+   - Import the `novelacad` repository
+
+3. **Configure Environment Variables:**
+   In Vercel dashboard:
+   - `SESSION_SECRET` → Your secret key
+   - `DB_PATH` → `./database.db`
+   - `MAIL_SERVER`, `MAIL_PORT`, etc.
+
+4. **Deploy:**
+   - Vercel automatically deploys on push to main
+   - Custom domain setup in project settings
+
+5. **Database Persistence:**
+   - Store SQLite database in `/tmp` (ephemeral) OR
+   - Use Vercel KV for session storage
+   - Consider using PlanetScale (MySQL) or Supabase (PostgreSQL) for persistent data
+
+### Render
+
+1. Go to [render.com](https://render.com)
+2. Connect GitHub repository
+3. Create new "Web Service"
+4. **Build command:** `npm install && npm run build`
+5. **Start command:** `npm run preview`
+6. Add environment variables
+7. Deploy
+
+### Railway
+
+1. Go to [railway.app](https://railway.app)
+2. Connect GitHub
+3. Create new project from repository
+4. Customize environment variables
+5. Deploy
+
+---
+
+## Post-Deployment
+
+### 1. Database Setup
+
+```bash
+# Verify database is created
+ls -la database.db
+
+# If needed, initialize schema
+sqlite3 database.db < ../schema.sql
+```
+
+### 2. Create Admin User
+
+Use the admin creation API endpoint or direct database insert:
+
+```bash
+cd /home/novelacad/app/novelacad-nuxt
+
+# Create first admin via direct SQL
+sqlite3 database.db "
+INSERT INTO admins (username, email, password_hash, role, created_at)
+VALUES ('admin', 'admin@novel-academy.com', '[bcrypt-hash]', 'master', datetime('now'))
+"
+```
+
+### 3. Test Application
+
+```bash
+# Check if app is running
+curl https://yourdomain.com
+
+# Check specific endpoints
+curl https://yourdomain.com/api/admin/session
+```
+
+### 4. Email Configuration
+
+If using Gmail:
+1. Enable 2-factor authentication
+2. Create "App Password" at [https://myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords)
+3. Use that password in `MAIL_PASSWORD` environment variable
+
+---
+
+## Monitoring & Maintenance
+
+### PM2 Monitoring
+
+```bash
+# View logs
+pm2 logs novelacad
+
+# Monitor in real-time
+pm2 monit
+
+# Restart application
+pm2 restart novelacad
+
+# View processes
+pm2 list
+```
+
+### Nginx Logs
+
+```bash
+# Access logs
+tail -f /var/log/nginx/novelacad_access.log
+
+# Error logs
+tail -f /var/log/nginx/novelacad_error.log
+```
+
+### Database Backups
+
+```bash
+# Backup SQLite database
+cp database.db database.db.backup.$(date +%Y%m%d_%H%M%S)
+
+# Automated daily backup (add to crontab)
+0 2 * * * cp /home/novelacad/app/novelacad-nuxt/database.db /backups/novelacad_$(date +\%Y\%m\%d).db
+```
+
+### Updates
+
+```bash
+# Pull latest code
+cd /home/novelacad/app
+git pull origin main
+
+# Install new dependencies if any
+cd novelacad-nuxt
+npm install
+
+# Rebuild
+npm run build
+
+# Restart application
+pm2 restart novelacad
+```
+
+---
+
+## Troubleshooting
+
+### Application won't start
+```bash
+pm2 logs novelacad  # Check error logs
+npm run dev         # Test locally first
+```
+
+### Database locked
+```bash
+# Check if another process is using database
+lsof | grep database.db
+
+# Restart application
+pm2 restart novelacad
+```
+
+### Email not sending
+- Check MAIL_* environment variables
+- Test with `npm run dev` and use test API endpoint
+- Check email provider API restrictions
+
+### High memory usage
+```bash
+# Check PM2 usage
+pm2 monit
+
+# Increase Node heap size if needed
+NODE_OPTIONS="--max_old_space_size=1024" npm run preview
+```
+
 sudo nano /etc/nginx/sites-available/novelacad
 ```
 

@@ -1,82 +1,315 @@
-# Deploying to Namecheap (Main Domain: novel-techtraining.com)
+# Deploying to Namecheap (novel-techtraining.com)
 
-This guide takes you through deploying your Flask application to your main domain `novel-techtraining.com` from scratch.
+Deploy your Novel Academy Nuxt/Nitro application to your main domain.
+
+## Architecture Overview
+
+```
+Front-end:  Nuxt 4 (Vue.js) - SSR rendered
+Back-end:   Nitro Server (Node.js) - API endpoints
+Database:   SQLite (better-sqlite3)
+Domain:     novel-techtraining.com (cPanel/Node.js)
+```
+
+---
 
 ## Step 1: Prepare Your Files (Local)
 
-1.  **Check `requirements.txt`**: Ensure it contains `reportlab` (not `flask-corsreportlab`).
-2.  **Check `passenger_wsgi.py`**: Ensure this file exists in your project root.
-3.  **Zip your project**: Select all files in your project folder (except `venv`, `.git`, `.idea`, `__pycache__`) and zip them into `novelacad.zip`.
+### Option A: Fresh Deploy from GitHub
 
-## Step 2: Upload Files to Namecheap
+```bash
+git clone https://github.com/novelacadhost-sketch/novelacad.git
+cd novelacad/novelacad-nuxt
 
-1.  Log in to **cPanel**.
-2.  Open **File Manager**.
-3.  **Create a Folder**:
-    - Navigate to your home directory (`/home/yourusername/`).
-    - Create a NEW folder named `novelacad_prod` (or similar).
-    - **CRITICAL:** Do NOT upload your files directly into `public_html` or the `novel-techtraining.com` folder.
-    - _Why?_ For security, your application code should live _outside_ the public web root. The "Setup Python App" tool will link your domain (`novel-techtraining.com`) to this private folder (`novelacad_prod`) automatically.
-4.  **Upload**:
-    - Go into `novelacad_prod`.
-    - Upload `novelacad.zip`.
-    - Right-click and **Extract** it here.
+# Install dependencies
+npm install
 
-## Step 3: Configure Python App in cPanel
+# Build for production
+npm run build
 
-1.  Go back to cPanel main menu.
-2.  Scroll to **Software** -> **Setup Python App**.
-3.  _If you have an old app for `api.novel-techtraining.com`, delete it to avoid conflicts (optional)._
-4.  Click **Create Application**.
-5.  **Configure**:
-    - **Python Version**: **3.8** (Recommended) or 3.9.
-    - **Application Root**: `novelacad_prod` (The folder you just created).
-    - **Application URL**: Select `novel-techtraining.com` from the dropdown. Leave the field blank to deploy to the root (e.g., `https://novel-techtraining.com/`).
-    - **Application Startup File**: `passenger_wsgi.py`
-    - **Application Entry Point**: `application`
-6.  Click **Create**.
+# Create deployment package
+zip -r ../novelacad-prod.zip . -x "node_modules/*" ".nuxt/*" ".git/*"
+```
 
-## Step 4: Install Dependencies
+### Option B: From Existing Files
 
-1.  At the top of the app page, look for the **"Enter to the virtual environment"** command. copying it.
-    - Example: `source /home/user/virtualenv/novelacad_prod/3.8/bin/activate && cd /home/user/novelacad_prod`
-2.  Open **Terminal** in cPanel.
-3.  Paste the command and press Enter.
-4.  Run:
-    ```bash
-    pip install -r requirements.txt
-    ```
+Ensure you have:
+- ✅ `novelacad-nuxt/` directory with all source code
+- ✅ `novelacad-nuxt/package.json`
+- ✅ `novelacad-nuxt/nuxt.config.ts`
+- ✅ `novelacad-nuxt/server/` directory
+- ✅ `schema.sql` for database initialization
 
-## Step 5: Database & Environment Setup
+---
 
-1.  **Initialize Database**:
-    (Still in Terminal)
+## Step 2: Upload to Namecheap
 
-    ```bash
-    python init_db.py
-    python manage_admins.py
-    ```
+### Option A: Using cPanel File Manager
 
-    - Create your Master Admin user when prompted.
+1. **Log in to cPanel**
+2. **File Manager** → Navigate to home directory
+3. **Create New Folder**: `novelacad_prod`
+   > **Important**: Do NOT upload into `public_html` or `novel-techtraining.com` folder. The application code should live outside the public web root for security.
 
-2.  **Add Environment Variables**:
-    Go back to the "Setup Python App" page in cPanel.
-    Scroll to **Environment variables**.
-    Add:
-    - `SECRET_KEY`: (Any long random string)
-    - `FLASK_ENV`: `production`
-    - `FLASK_DEBUG`: `False`
+4. **Enter the folder** → **Upload**
+5. Upload `novelacad-prod.zip` (or individual files)
+6. **Extract** the zip file
+7. Delete the zip after extraction
 
-    Click **Save**.
+### Option B: Using FTP
 
-## Step 6: Restart & Test
+```bash
+# From local machine
+ftp ftp.novel-techtraining.com
+username: your-cpanel-username
+password: your-cpanel-password
 
-1.  Click **Restart** on the Python App page.
-2.  Visit `https://novel-techtraining.com`.
+# Navigate to home directory
+cd
+mkdir novelacad_prod
+cd novelacad_prod
+
+# Upload files
+mput novelacad-nuxt/* 
+```
+
+---
+
+## Step 3: Configure Node.js in cPanel
+
+### Instead of Python App
+
+Since Nuxt requires Node.js (not Python), we'll use **Node.js App Manager** or **Setup Node.js App** (if available):
+
+1. **cPanel → Node.js App Manager** (or **Setup Node.js App**)
+2. **Create Application**:
+   - **App Mode**: Production
+   - **Node.js Version**: 18.x or higher
+   - **Application Root**: `/novelacad_prod` (the folder you just created)
+   - **Application URL**: `novel-techtraining.com` (or leave blank for root)
+   - **Startup File**: `server/index.mjs` or `dist/server/index.mjs` (depending on build output)
+   - **Application Entry Point**: (usually auto-detected)
+
+3. Click **Create**
+
+> **Note**: If Node.js App Manager is not available, contact Namecheap support to enable Node.js hosting on your plan.
+
+---
+
+## Step 4: Install Dependencies & Build
+
+### In cPanel Terminal
+
+1. **cPanel → Terminal** (or SSH)
+2. Navigate to your directory:
+
+```bash
+cd ~/novelacad_prod
+
+# Install production dependencies only
+npm install --production
+
+# Or build inside the directory if `dist` doesn't exist
+npm install                 # Install all dependencies
+npm run build              # Build the application
+
+# Verify the dist folder was created
+ls -la dist/
+```
+
+---
+
+## Step 5: Environment Variables
+
+### Set Environment Variables in cPanel
+
+1. **cPanel → Node.js App Manager**
+2. **Select your novelacad_prod application**
+3. **Environment Variables** section, add:
+
+```
+SESSION_SECRET        = your-very-long-random-secret-key
+NODE_ENV              = production
+DB_PATH               = ./database.db
+MAIL_SERVER           = smtp.gmail.com
+MAIL_PORT             = 587
+MAIL_USERNAME         = your-email@gmail.com
+MAIL_PASSWORD         = your-app-password
+MAIL_DEFAULT_SENDER   = info@novel-academy.com
+```
+
+**Generate SESSION_SECRET:**
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+4. Click **Save**
+
+---
+
+## Step 6: Database Setup
+
+### Initialize Database
+
+```bash
+# In cPanel Terminal (or SSH), navigate to app directory
+cd ~/novelacad_prod
+
+# Initialize SQLite database with schema
+sqlite3 database.db < ../schema.sql
+
+# Or if that path doesn't work:
+cat << 'EOF' | sqlite3 database.db
+[Copy contents of schema.sql here]
+EOF
+
+# Verify database was created
+ls -la database.db
+```
+
+---
+
+## Step 7: Create First Admin User
+
+### Option A: Via Database Insert
+
+```bash
+# In cPanel Terminal
+sqlite3 database.db
+
+# Inside sqlite3 shell:
+INSERT INTO admins (username, email, password_hash, role, created_at)
+VALUES ('admin', 'admin@example.com', '$2a$12$...', 'master', datetime('now'));
+```
+
+> Password hash can be generated using bcryptjs: `npm install bcryptjs` then use password generator
+
+### Option B: Via Application API
+
+After app is running, use an admin creation endpoint or the contact form first, then manually promote that user.
+
+---
+
+## Step 8: Start & Verify
+
+1. **cPanel → Node.js App Manager**
+2. Select your application
+3. Click **Start/Restart**
+4. Click **"Open in Browser"** or visit `https://novel-techtraining.com`
+
+### Check Logs
+
+Click the **Logs** button to view application output and errors.
+
+---
 
 ## Troubleshooting
 
-- **"It works!" default page**: If you see a default Python page, ensure your `passenger_wsgi.py` is correct and you clicked **Restart**.
-- **Static Files (CSS/Images missing)**:
-  - Flask should serve them automatically in this setup.
-  - If not, you might need to try forcing `STATIC_URL` or ensuring the `static` folder is inside `novelacad_prod`.
+### "Cannot find application startup file"
+- Ensure `dist/server/index.mjs` exists after build
+- Check that `npm run build` completed successfully
+- Verify the Startup File path matches exactly
+
+### Application won't start - 502 Bad Gateway
+```bash
+# In Terminal, check logs
+tail -f ~/novelacad_prod/.build/logs  # Adjust path as needed
+
+# Verify Node.js version
+node --version
+
+# Ensure all dependencies installed
+npm install
+```
+
+### Database "locked" or "already in use"
+- Restart the application through cPanel
+- Check if another process is using the database
+
+### Static files (CSS/images) not loading
+- Run `npm run build` again
+- Verify `public/` folder contents
+- Check Nginx/Apache serves static files correctly
+
+### Email not sending
+- Verify `MAIL_*` environment variables are set
+- For Gmail: Use [App Password](https://myaccount.google.com/apppasswords)
+- Check email provider doesn't block SMTP from your server
+
+### "Cannot GET /" or blank page
+- Check build output: `npm run build`
+- Verify `dist/` folder contains `server/` and `client/` directories
+- Check application logs for errors
+
+---
+
+## Updating Your Application
+
+### When you want to deploy updates:
+
+```bash
+# From your local machine
+cd novelacad
+git add .
+git commit -m "Update feature"
+git push origin main
+
+# On server (via Terminal or GitHub Actions)
+cd ~/novelacad_prod
+git pull origin main
+npm install
+npm run build
+```
+
+Then restart the application in cPanel → Node.js App Manager.
+
+---
+
+## Performance Optimization
+
+### Enable Compression
+In `nuxt.config.ts`:
+
+```typescript
+export default defineNuxtConfig({
+  nitro: {
+    prerender: {
+      crawlLinks: true,
+    },
+    headers: {
+      'Cache-Control': 'public, max-age=3600',
+    }
+  }
+})
+```
+
+### Database Optimization
+
+```bash
+# Optimize SQLite database
+sqlite3 database.db "VACUUM;"
+```
+
+---
+
+## Backups
+
+```bash
+# Backup database
+cp database.db database.db.backup.$(date +%Y%m%d)
+
+# Backup entire application
+tar -czf novelacad-backup-$(date +%Y%m%d).tar.gz ~/novelacad_prod/
+```
+
+---
+
+## Support
+
+For Namecheap support:
+- **Chat/Ticket**: https://www.namecheap.com/support/
+- **Node.js issues**: Check Node.js documentation at https://nodejs.org/
+
+For Novel Academy issues:
+- **GitHub Issues**: https://github.com/novelacadhost-sketch/novelacad/issues
+

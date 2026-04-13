@@ -36,5 +36,7 @@ CREATE TABLE admins (
     email TEXT NOT NULL UNIQUE,
     role TEXT DEFAULT 'admin',
     password_hash TEXT NOT NULL,
+    reset_token TEXT,
+    reset_token_expires TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

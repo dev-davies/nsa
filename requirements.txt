@@ -1,7 +1,0 @@
-flask
-flask-wtf
-flask-limiter
-itsdangerous
-werkzeug
-reportlab
-Flask-Mail
