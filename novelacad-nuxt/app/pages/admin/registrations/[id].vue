@@ -75,21 +75,21 @@
           <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
             <h3 class="font-bold text-gray-700 mb-4">Actions</h3>
             <div class="space-y-3">
+              <button @click="downloadCSV" class="flex items-center gap-3 w-full px-4 py-3 bg-green-50 text-green-700 font-semibold rounded-xl hover:bg-green-100 border border-green-200 transition-colors text-sm">
+                <i class="fas fa-file-csv"></i> Download CSV
+              </button>
+              <button @click="downloadPDF" class="flex items-center gap-3 w-full px-4 py-3 bg-red-50 text-red-700 font-semibold rounded-xl hover:bg-red-100 border border-red-200 transition-colors text-sm">
+                <i class="fas fa-file-pdf"></i> Print to PDF
+              </button>
+
+              <div class="pt-2 border-t border-gray-100 mt-2"></div>
+              
               <NuxtLink :to="`/admin/registrations/${reg.id}/edit`" class="flex items-center gap-3 w-full px-4 py-3 bg-amber-50 text-amber-700 font-semibold rounded-xl hover:bg-amber-100 transition-colors text-sm">
                 <i class="fas fa-edit"></i> Edit Registration
               </NuxtLink>
               <a :href="`https://mail.google.com/mail/?view=cm&fs=1&to=${reg.email}`" target="_blank" class="flex items-center gap-3 w-full px-4 py-3 bg-brand-50 text-brand-700 font-semibold rounded-xl hover:bg-brand-100 transition-colors text-sm">
                 <i class="fas fa-envelope"></i> Email Applicant (Gmail)
               </a>
-              
-              <div class="pt-2 border-t border-gray-100 mt-2 space-y-3">
-                <button @click="downloadCSV" class="flex items-center gap-3 w-full px-4 py-3 bg-green-50 text-green-700 font-semibold rounded-xl hover:bg-green-100 transition-colors text-sm">
-                  <i class="fas fa-file-csv"></i> Download CSV
-                </button>
-                <button @click="downloadPDF" class="flex items-center gap-3 w-full px-4 py-3 bg-red-50 text-red-700 font-semibold rounded-xl hover:bg-red-100 transition-colors text-sm">
-                  <i class="fas fa-file-pdf"></i> Print to PDF
-                </button>
-              </div>
 
               <button @click="deleteReg" class="flex items-center gap-3 w-full px-4 py-3 bg-gray-50 text-gray-500 font-semibold rounded-xl hover:bg-gray-100 transition-colors text-sm mt-4">
                 <i class="fas fa-trash"></i> Delete Registration
