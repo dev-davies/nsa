@@ -13,7 +13,22 @@
       <i class="fas fa-spinner fa-spin mr-3 text-2xl"></i> Loading...
     </div>
 
-    <div v-else-if="reg" class="max-w-4xl">
+    <div v-else-if="reg" class="max-w-4xl" id="registration-content">
+      <!-- PDF Header (Visible only in PDF/Print) -->
+      <div class="print-only items-center justify-between mb-10 pb-6 border-b-2 border-brand-500">
+        <div class="flex items-center gap-4">
+          <img src="/img/novel_logo-removebg-preview.png" class="h-16 w-auto" alt="Logo" />
+          <div>
+            <h1 class="text-2xl font-heading font-black text-gray-900 leading-tight">Novel Academy</h1>
+            <p class="text-brand-600 font-bold tracking-widest uppercase text-[10px]">Official Registration Record</p>
+          </div>
+        </div>
+        <div class="text-right">
+          <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">Document ID</p>
+          <p class="text-lg font-heading font-black text-gray-800">#{{ reg.id }}-{{ new Date().getFullYear() }}</p>
+        </div>
+      </div>
+
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Main Info -->
         <div class="lg:col-span-2 space-y-6">
@@ -66,11 +81,31 @@
               <a :href="`https://mail.google.com/mail/?view=cm&fs=1&to=${reg.email}`" target="_blank" class="flex items-center gap-3 w-full px-4 py-3 bg-brand-50 text-brand-700 font-semibold rounded-xl hover:bg-brand-100 transition-colors text-sm">
                 <i class="fas fa-envelope"></i> Email Applicant (Gmail)
               </a>
-              <button @click="deleteReg" class="flex items-center gap-3 w-full px-4 py-3 bg-red-50 text-red-700 font-semibold rounded-xl hover:bg-red-100 transition-colors text-sm">
+              
+              <div class="pt-2 border-t border-gray-100 mt-2 space-y-3">
+                <button @click="exportToCSV" class="flex items-center gap-3 w-full px-4 py-3 bg-green-50 text-green-700 font-semibold rounded-xl hover:bg-green-100 transition-colors text-sm">
+                  <i class="fas fa-file-csv"></i> Download CSV
+                </button>
+                <button @click="exportToPDF" class="flex items-center gap-3 w-full px-4 py-3 bg-red-50 text-red-700 font-semibold rounded-xl hover:bg-red-100 transition-colors text-sm">
+                  <i class="fas fa-file-pdf"></i> Print to PDF
+                </button>
+              </div>
+
+              <button @click="deleteReg" class="flex items-center gap-3 w-full px-4 py-3 bg-gray-50 text-gray-500 font-semibold rounded-xl hover:bg-gray-100 transition-colors text-sm mt-4">
                 <i class="fas fa-trash"></i> Delete Registration
               </button>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- PDF Footer (Visible only in PDF/Print) -->
+      <div class="print-only items-center justify-between mt-12 pt-6 border-t border-gray-100 italic text-gray-400 text-[10px]">
+        <div>
+          Generated on {{ new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) }}
+        </div>
+        <div>
+          novel-academy.com
         </div>
       </div>
     </div>
@@ -96,7 +131,109 @@ async function deleteReg() {
   await $fetch(`/api/admin/registrations/${id}`, { method: 'DELETE' })
   navigateTo('/admin/dashboard')
 }
+
+import Papa from 'papaparse'
+
+function exportToCSV() {
+  if (!reg.value) return
+  
+  // Create a flat object with readable headers
+  const data = [{
+    'Registration ID': reg.value.id,
+    'Full Name': reg.value.full_name,
+    'Email': reg.value.email,
+    'Phone': reg.value.phone,
+    'DOB': reg.value.dob,
+    'Address': reg.value.address,
+    'Sex': reg.value.sex,
+    'Nationality': reg.value.nationality,
+    'State': reg.value.state,
+    'Education Level': reg.value.level,
+    'Qualification': reg.value.qualification,
+    'Course': reg.value.course,
+    'Duration': reg.value.duration,
+    'Goals': reg.value.goals,
+    'Experience': reg.value.experience,
+    'Info Source': reg.value.info_source,
+    'Submitted At': reg.value.submitted_at
+  }]
+
+  try {
+    const csv = Papa.unparse(data)
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const fileName = `Registration_${reg.value.id}_${reg.value.full_name.replace(/\s+/g, '_')}.csv`
+    
+    link.href = URL.createObjectURL(blob)
+    link.setAttribute('download', fileName)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  } catch (err) {
+    console.error('CSV Export Error:', err)
+  }
+}
+
+async function exportToPDF() {
+  if (!reg.value) return
+  
+  // Dynamic import to avoid SSR issues
+  const html2pdf = (await import('html2pdf.js')).default
+  const element = document.getElementById('registration-content')
+  
+  const opt = {
+    margin: 10,
+    filename: `Registration_${reg.value.id}_${reg.value.full_name.replace(/\s+/g, '_')}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  }
+
+  html2pdf().set(opt).from(element).save()
+}
 </script>
+
+<style scoped>
+.print-only {
+  display: none !important;
+}
+
+@media print {
+  .print-only {
+    display: flex !important;
+  }
+  
+  /* Hide UI elements */
+  .lg\:col-span-1, 
+  nav, 
+  header, 
+  .flex.items-center.gap-4 { 
+    display: none !important; 
+  }
+  
+  /* Expand main content */
+  .max-w-4xl {
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  .lg\:col-span-2 {
+    grid-column: span 3 / span 3 !important;
+  }
+
+  body {
+    background: white !important;
+  }
+  
+  /* Ensure backgrounds are kept */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+</style>
 
 <!-- Inline sub-component for field display -->
 <script lang="ts">
