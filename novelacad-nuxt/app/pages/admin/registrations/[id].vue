@@ -63,8 +63,8 @@
               <NuxtLink :to="`/admin/registrations/${reg.id}/edit`" class="flex items-center gap-3 w-full px-4 py-3 bg-amber-50 text-amber-700 font-semibold rounded-xl hover:bg-amber-100 transition-colors text-sm">
                 <i class="fas fa-edit"></i> Edit Registration
               </NuxtLink>
-              <a :href="`mailto:${reg.email}`" class="flex items-center gap-3 w-full px-4 py-3 bg-brand-50 text-brand-700 font-semibold rounded-xl hover:bg-brand-100 transition-colors text-sm">
-                <i class="fas fa-envelope"></i> Email Applicant
+              <a :href="`https://mail.google.com/mail/?view=cm&fs=1&to=${reg.email}`" target="_blank" class="flex items-center gap-3 w-full px-4 py-3 bg-brand-50 text-brand-700 font-semibold rounded-xl hover:bg-brand-100 transition-colors text-sm">
+                <i class="fas fa-envelope"></i> Email Applicant (Gmail)
               </a>
               <button @click="deleteReg" class="flex items-center gap-3 w-full px-4 py-3 bg-red-50 text-red-700 font-semibold rounded-xl hover:bg-red-100 transition-colors text-sm">
                 <i class="fas fa-trash"></i> Delete Registration

@@ -91,20 +91,26 @@
               <th class="th">Email</th>
               <th class="th">Subject</th>
               <th class="th">Date</th>
+              <th class="th">Actions</th>
             </tr>
           </thead>
           <tbody>
             <tr v-if="msgPending" class="text-center">
-              <td colspan="4" class="py-10 text-gray-400"><i class="fas fa-spinner fa-spin mr-2"></i>Loading...</td>
+              <td colspan="5" class="py-10 text-gray-400"><i class="fas fa-spinner fa-spin mr-2"></i>Loading...</td>
             </tr>
             <tr v-else-if="!messages.length" class="text-center">
-              <td colspan="4" class="py-10 text-gray-400">No messages yet.</td>
+              <td colspan="5" class="py-10 text-gray-400">No messages yet.</td>
             </tr>
             <tr v-for="msg in messages" :key="msg.id" class="border-b border-gray-50 hover:bg-gray-50">
               <td class="td font-medium text-gray-800">{{ msg.name }}</td>
               <td class="td text-sm text-gray-600">{{ msg.email }}</td>
               <td class="td text-sm text-gray-600 max-w-xs truncate">{{ msg.subject || '(No subject)' }}</td>
               <td class="td text-sm text-gray-500">{{ formatDate(msg.submitted_at) }}</td>
+              <td class="td">
+                <button @click="viewMessage(msg)" class="p-1.5 text-brand-500 hover:bg-brand-50 rounded-lg transition-colors" title="View Message">
+                  <i class="fas fa-eye text-sm"></i>
+                </button>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -167,6 +173,65 @@
             </tr>
           </tbody>
         </table>
+      </div>
+    </div>
+
+    <!-- Message View Modal -->
+    <div v-if="showViewModal && selectedMessage" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm" @click="showViewModal = false"></div>
+      <div class="bg-white rounded-3xl w-full max-w-2xl shadow-2xl relative z-10 overflow-hidden animate-in fade-in zoom-in duration-200">
+        <div class="px-8 py-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+          <div>
+            <h3 class="text-xl font-heading font-black text-gray-800">Message Details</h3>
+            <p class="text-xs text-gray-500 font-medium mt-1">From {{ selectedMessage.name }} on {{ formatDate(selectedMessage.submitted_at) }}</p>
+          </div>
+          <button @click="showViewModal = false" class="w-10 h-10 rounded-xl flex items-center justify-center text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-all">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="p-8">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="space-y-1">
+              <span class="text-[10px] uppercase tracking-wider font-bold text-gray-400 block ml-1">Sender</span>
+              <div class="p-4 bg-gray-50 rounded-2xl border border-gray-100 font-medium text-gray-800 flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-brand-100 text-brand-600 flex items-center justify-center flex-shrink-0">
+                  <i class="fas fa-user text-xs"></i>
+                </div>
+                {{ selectedMessage.name }}
+              </div>
+            </div>
+            <div class="space-y-1">
+              <span class="text-[10px] uppercase tracking-wider font-bold text-gray-400 block ml-1">Email Address</span>
+              <div class="p-4 bg-gray-50 rounded-2xl border border-gray-100 text-gray-600 flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+                  <i class="fas fa-envelope text-xs"></i>
+                </div>
+                {{ selectedMessage.email }}
+              </div>
+            </div>
+          </div>
+          
+          <div class="space-y-1 mb-8">
+            <span class="text-[10px] uppercase tracking-wider font-bold text-gray-400 block ml-1">Subject</span>
+            <div class="p-4 bg-gray-50 rounded-2xl border border-gray-100 font-bold text-gray-800">
+              {{ selectedMessage.subject || '(No Subject)' }}
+            </div>
+          </div>
+
+          <div class="space-y-1">
+            <span class="text-[10px] uppercase tracking-wider font-bold text-gray-400 block ml-1">Message Body</span>
+            <div class="p-6 bg-white rounded-2xl border border-gray-100 text-gray-700 leading-relaxed whitespace-pre-wrap whitespace-normal break-words max-h-60 overflow-y-auto custom-scrollbar">
+              {{ selectedMessage.message }}
+            </div>
+          </div>
+        </div>
+        <div class="px-8 py-5 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+          <a :href="`https://mail.google.com/mail/?view=cm&fs=1&to=${selectedMessage.email}&su=Re: ${encodeURIComponent(selectedMessage.subject || '')}`" target="_blank" class="px-6 py-2.5 bg-brand-500 text-white font-bold rounded-xl hover:bg-brand-600 transition-all shadow-lg shadow-brand-500/20 flex items-center gap-2">
+            <i class="fas fa-reply text-xs"></i>
+            Reply via Gmail
+          </a>
+          <button @click="showViewModal = false" class="px-6 py-2.5 bg-white text-gray-700 border border-gray-200 font-bold rounded-xl hover:bg-gray-50 transition-all">Close</button>
+        </div>
       </div>
     </div>
   </NuxtLayout>
@@ -235,6 +300,15 @@ async function deleteAdmin(id: number) {
   } catch (e: any) {
     alert(e?.data?.statusMessage || 'Error deleting admin.')
   }
+}
+
+// Message Modal
+const showViewModal = ref(false)
+const selectedMessage = ref<any>(null)
+
+function viewMessage(msg: any) {
+  selectedMessage.value = msg
+  showViewModal.value = true
 }
 </script>
 
