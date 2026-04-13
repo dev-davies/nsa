@@ -13,7 +13,7 @@
       <i class="fas fa-spinner fa-spin mr-3 text-2xl"></i> Loading...
     </div>
 
-    <div v-else-if="reg" class="max-w-4xl" id="registration-content">
+    <div v-else-if="reg" class="max-w-4xl" id="registration-details-print">
       <!-- PDF Header (Visible only in PDF/Print) -->
       <div class="print-only items-center justify-between mb-10 pb-6 border-b-2 border-brand-500">
         <div class="flex items-center gap-4">
@@ -83,10 +83,10 @@
               </a>
               
               <div class="pt-2 border-t border-gray-100 mt-2 space-y-3">
-                <button @click="exportToCSV" class="flex items-center gap-3 w-full px-4 py-3 bg-green-50 text-green-700 font-semibold rounded-xl hover:bg-green-100 transition-colors text-sm">
+                <button @click="downloadCSV" class="flex items-center gap-3 w-full px-4 py-3 bg-green-50 text-green-700 font-semibold rounded-xl hover:bg-green-100 transition-colors text-sm">
                   <i class="fas fa-file-csv"></i> Download CSV
                 </button>
-                <button @click="exportToPDF" class="flex items-center gap-3 w-full px-4 py-3 bg-red-50 text-red-700 font-semibold rounded-xl hover:bg-red-100 transition-colors text-sm">
+                <button @click="downloadPDF" class="flex items-center gap-3 w-full px-4 py-3 bg-red-50 text-red-700 font-semibold rounded-xl hover:bg-red-100 transition-colors text-sm">
                   <i class="fas fa-file-pdf"></i> Print to PDF
                 </button>
               </div>
@@ -134,7 +134,7 @@ async function deleteReg() {
 
 import Papa from 'papaparse'
 
-function exportToCSV() {
+function downloadCSV() {
   if (!reg.value) return
   
   // Create a flat object with readable headers
@@ -174,12 +174,12 @@ function exportToCSV() {
   }
 }
 
-async function exportToPDF() {
+async function downloadPDF() {
   if (!reg.value) return
   
   // Dynamic import to avoid SSR issues
   const html2pdf = (await import('html2pdf.js')).default
-  const element = document.getElementById('registration-content')
+  const element = document.getElementById('registration-details-print')
   
   const opt = {
     margin: 10,
