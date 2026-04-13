@@ -10,7 +10,9 @@ export default defineNuxtConfig({
   runtimeConfig: {
     // Private — server only
     sessionSecret: process.env.SESSION_SECRET || 'dev-secret-change-in-production',
-    dbPath: process.env.DB_PATH || './database.db',
+    dbPath: process.env.DB_PATH,
+    tursoUrl: process.env.DATABASE_URL,
+    tursoToken: process.env.DATABASE_TOKEN,
     mailHost: process.env.MAIL_SERVER || 'smtp.gmail.com',
     mailPort: process.env.MAIL_PORT || '587',
     mailUser: process.env.MAIL_USERNAME || '',
@@ -23,10 +25,7 @@ export default defineNuxtConfig({
   },
 
   nitro: {
-    // Ensure native node modules (better-sqlite3) work in Nitro
-    experimental: {
-      wasm: false,
-    },
+    // libSQL works out of the box with standard Nitro settings
   },
 
   app: {
