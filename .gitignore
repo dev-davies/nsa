@@ -1,0 +1,44 @@
+# Python
+venv/
+.venv/
+env/
+__pycache__/
+*.pyc
+*.egg-info/
+env.zip
+
+# Node.js & npm
+node_modules/
+package-lock.json
+npm-debug.log
+yarn-error.log
+
+# Nuxt
+.nuxt/
+dist/
+build/
+.output/
+.env
+.env.local
+.env.*.local
+
+# Databases
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+database.db
+database.sqlite
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS
+Thumbs.db
+env.zip
