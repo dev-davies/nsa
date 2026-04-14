@@ -26,11 +26,11 @@
     <!-- Main nav (skinny) -->
     <div class="bg-white/90 backdrop-blur border-b border-gray-100">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 h-14 flex items-center justify-between">
-        <NuxtLink to="/" class="flex items-center gap-3">
+        <NuxtLink to="/" class="flex items-center gap-3 -ml-2 sm:-ml-4 lg:-ml-6">
           <img
             src="/img/novel_logo-removebg-preview.png"
             alt="Novel Academy"
-            class="h-9 w-auto object-contain"
+            class="h-12 w-auto object-contain"
           />
         </NuxtLink>
 

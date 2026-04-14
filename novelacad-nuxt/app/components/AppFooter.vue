@@ -8,7 +8,7 @@
     <div class="max-w-7xl mx-auto px-6 lg:px-10 pt-24 pb-12">
       <div class="flex flex-col items-center justify-center gap-2 mb-12 text-center">
         <div class="flex items-center gap-3">
-          <img src="/img/novel_logo-removebg-preview.png" alt="Novel Academy" class="h-10 w-auto object-contain" />
+          <img src="/img/novel_logo-removebg-preview.png" alt="Novel Academy" class="h-14 w-auto object-contain" />
           <span class="font-heading font-black text-white tracking-wide">NOVEL ACADEMY</span>
         </div>
         <p class="text-xs text-gray-400">Where innovation meets sustainability!</p>
