@@ -138,9 +138,7 @@ async function deleteReg() {
   navigateTo('/admin/dashboard')
 }
 
-import Papa from 'papaparse'
-
-function downloadCSV() {
+async function downloadCSV() {
   if (!reg.value) return
   
   // Create a flat object with readable headers
@@ -165,7 +163,10 @@ function downloadCSV() {
   }]
 
   try {
-    const csv = Papa.unparse(data)
+    const headers = Object.keys(data[0])
+    const rows = data.map(row => headers.map(h => (row as any)[h]))
+    const escapeCell = (cell: unknown) => `"${String(cell ?? '').replace(/"/g, '""')}"`
+    const csv = [headers, ...rows].map(r => r.map(escapeCell).join(',')).join('\r\n')
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement('a')
     const fileName = `Registration_${reg.value.id}_${reg.value.full_name.replace(/\s+/g, '_')}.csv`
