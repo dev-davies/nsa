@@ -78,6 +78,12 @@
               <button @click="downloadCSV" class="flex items-center gap-3 w-full px-4 py-3 bg-green-50 text-green-700 font-semibold rounded-xl hover:bg-green-100 border border-green-200 transition-colors text-sm">
                 <i class="fas fa-file-csv"></i> Download CSV
               </button>
+              <a
+                :href="`/api/admin/registrations/export/pdf?export_type=selected&selected_ids=${reg.id}`"
+                class="flex items-center gap-3 w-full px-4 py-3 bg-red-50 text-red-700 font-semibold rounded-xl hover:bg-red-100 border border-red-200 transition-colors text-sm"
+              >
+                <i class="fas fa-file-pdf"></i> Export PDF
+              </a>
               <button @click="downloadPDF" class="flex items-center gap-3 w-full px-4 py-3 bg-red-50 text-red-700 font-semibold rounded-xl hover:bg-red-100 border border-red-200 transition-colors text-sm">
                 <i class="fas fa-file-pdf"></i> Print to PDF
               </button>

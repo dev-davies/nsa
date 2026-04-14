@@ -17,7 +17,27 @@ export default defineEventHandler(async (event) => {
   const endDate = String(query.end_date || '')
 
   // Build query based on export type
-  let sqlQuery = `SELECT id, full_name, email, phone, course, submitted_at FROM registrations`
+  let sqlQuery = `
+    SELECT
+      id,
+      full_name,
+      email,
+      phone,
+      dob,
+      address,
+      sex,
+      nationality,
+      state,
+      course,
+      duration,
+      level,
+      qualification,
+      goals,
+      experience,
+      info_source,
+      submitted_at
+    FROM registrations
+  `.trim()
   const params: any[] = []
 
   if (exportType === 'selected' && selectedIds.length > 0) {
@@ -40,7 +60,18 @@ export default defineEventHandler(async (event) => {
     full_name: string
     email: string
     phone: string
+    dob: string
+    address: string
+    sex: string
+    nationality: string
+    state: string
     course: string
+    duration: string | null
+    level: string
+    qualification: string | null
+    goals: string | null
+    experience: string | null
+    info_source: string | null
     submitted_at: string
   }>
 
@@ -59,61 +90,73 @@ export default defineEventHandler(async (event) => {
   )
   doc.moveDown(1)
 
-  // Table headers
-  const tableTop = doc.y
-  const col1 = 50
-  const col2 = 150
-  const col3 = 250
-  const col4 = 350
-  const col5 = 420
-  const col6 = 500
-  const rowHeight = 20
+  const left = doc.page.margins.left
+  const right = doc.page.width - doc.page.margins.right
+  const contentWidth = right - left
 
-  doc.fontSize(9).font('Helvetica-Bold')
-  doc.fillColor('#2878EB').rect(col1 - 10, tableTop, 490, rowHeight).fill()
-  doc.fillColor('#000000')
+  const labelWidth = Math.min(150, Math.floor(contentWidth * 0.32))
+  const valueWidth = contentWidth - labelWidth
 
-  const headers = ['ID', 'Full Name', 'Email', 'Phone', 'Course', 'Submitted At']
-  doc.fillColor('#FFFFFF')
-  doc.text('ID', col1, tableTop + 5, { width: 90, align: 'left' })
-  doc.text('Full Name', col2, tableTop + 5, { width: 90, align: 'left' })
-  doc.text('Email', col3, tableTop + 5, { width: 90, align: 'left' })
-  doc.text('Phone', col4, tableTop + 5, { width: 60, align: 'left' })
-  doc.text('Course', col5, tableTop + 5, { width: 70, align: 'left' })
-  doc.text('Submitted', col6, tableTop + 5, { width: 60, align: 'left' })
-
-  // Table rows
-  doc.fillColor('#000000')
-  doc.font('Helvetica')
-  doc.fontSize(8)
-
-  let currentY = tableTop + rowHeight
-  let isAlternate = false
-
-  for (const reg of registrations) {
-    // Alternate row colors
-    if (isAlternate) {
-      doc.fillColor('#F5F5F5').rect(col1 - 10, currentY, 490, rowHeight).fill()
-      doc.fillColor('#000000')
-    }
-
-    doc.text(String(reg.id), col1, currentY + 3, { width: 90, align: 'left' })
-    doc.text(reg.full_name, col2, currentY + 3, { width: 90, align: 'left' })
-    doc.text(reg.email, col3, currentY + 3, { width: 90, align: 'left' })
-    doc.text(reg.phone, col4, currentY + 3, { width: 60, align: 'left' })
-    doc.text(reg.course, col5, currentY + 3, { width: 70, align: 'left' })
-    doc.text(reg.submitted_at, col6, currentY + 3, { width: 60, align: 'left' })
-
-    currentY += rowHeight
-    isAlternate = !isAlternate
-
-    // Add new page if content exceeds page height
-    if (currentY > 750) {
-      doc.addPage()
-      currentY = 40
-      isAlternate = false
-    }
+  function formatValue(v: unknown) {
+    if (v === null || v === undefined) return '—'
+    const s = String(v).trim()
+    return s ? s : '—'
   }
+
+  function drawField(label: string, value: unknown) {
+    const y = doc.y
+    doc.font('Helvetica-Bold').fillColor('#111827').text(label, left, y, { width: labelWidth })
+    doc.font('Helvetica').fillColor('#111827').text(formatValue(value), left + labelWidth, y, {
+      width: valueWidth,
+      lineGap: 2,
+    })
+    doc.moveDown(0.6)
+  }
+
+  function drawRegistrationDetails(reg: (typeof registrations)[number], idx: number) {
+    if (idx > 0) doc.addPage()
+
+    // Header block
+    doc.fillColor('#111827').font('Helvetica-Bold').fontSize(14).text(`Registration #${reg.id}`, { align: 'left' })
+    doc.moveDown(0.25)
+    doc.font('Helvetica').fontSize(10).fillColor('#6B7280').text(`Submitted: ${formatValue(reg.submitted_at)}`)
+    doc.moveDown(0.8)
+
+    // Divider
+    const y = doc.y
+    doc.moveTo(left, y).lineTo(right, y).lineWidth(1).strokeColor('#E5E7EB').stroke()
+    doc.moveDown(1)
+
+    // Core details
+    doc.fontSize(10)
+    drawField('Full name', reg.full_name)
+    drawField('Email', reg.email)
+    drawField('Phone', reg.phone)
+    drawField('Date of birth', reg.dob)
+    drawField('Sex', reg.sex)
+    drawField('Nationality', reg.nationality)
+    drawField('State', reg.state)
+    drawField('Address', reg.address)
+
+    doc.moveDown(0.3)
+    const y2 = doc.y
+    doc.moveTo(left, y2).lineTo(right, y2).lineWidth(1).strokeColor('#F3F4F6').stroke()
+    doc.moveDown(0.8)
+
+    // Course details
+    doc.font('Helvetica-Bold').fillColor('#111827').fontSize(11).text('Course details')
+    doc.moveDown(0.6)
+    doc.fontSize(10).font('Helvetica')
+    drawField('Course', reg.course)
+    drawField('Duration', reg.duration)
+    drawField('Education level', reg.level)
+    drawField('Qualification', reg.qualification)
+    drawField('Goals', reg.goals)
+    drawField('Experience', reg.experience)
+    drawField('Info source', reg.info_source)
+  }
+
+  registrations.forEach(drawRegistrationDetails)
 
   // Add footer with totals
   doc.moveDown(1)

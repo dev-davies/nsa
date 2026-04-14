@@ -23,9 +23,15 @@
         <h2 class="font-heading font-bold text-gray-800">Registrations</h2>
         <div class="flex items-center gap-3">
           <input v-model="search" type="text" placeholder="Search..." class="form-input !py-2 !text-sm w-48" />
-          <a href="/api/admin/registrations/export/pdf" class="flex items-center gap-2 px-4 py-2 bg-red-600 text-white text-sm font-semibold rounded-xl hover:bg-red-700 transition-colors">
-            <i class="fas fa-file-pdf"></i> PDF
-          </a>
+          <button
+            type="button"
+            @click="exportSelectedPdf"
+            :disabled="!selectedRegistrationIds.length"
+            class="flex items-center gap-2 px-4 py-2 bg-red-600 text-white text-sm font-semibold rounded-xl hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            :title="selectedRegistrationIds.length ? `Export ${selectedRegistrationIds.length} selected` : 'Select at least one registration to export'"
+          >
+            <i class="fas fa-file-pdf"></i> PDF ({{ selectedRegistrationIds.length || 0 }})
+          </button>
           <a href="/api/admin/registrations/export/csv" class="flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-xl hover:bg-green-700 transition-colors">
             <i class="fas fa-download"></i> CSV
           </a>
@@ -36,6 +42,17 @@
         <table class="w-full">
           <thead class="bg-gray-50 border-b border-gray-100">
             <tr>
+              <th class="th w-10">
+                <input
+                  type="checkbox"
+                  class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                  :checked="allVisibleSelected"
+                  :indeterminate="someVisibleSelected && !allVisibleSelected"
+                  @change="toggleSelectAllVisible"
+                  :disabled="!filteredRegistrations.length"
+                  title="Select all visible"
+                />
+              </th>
               <th class="th">ID</th>
               <th class="th">Name</th>
               <th class="th">Email</th>
@@ -47,12 +64,21 @@
           </thead>
           <tbody>
             <tr v-if="pending" class="text-center">
-              <td colspan="7" class="py-10 text-gray-400"><i class="fas fa-spinner fa-spin mr-2"></i>Loading...</td>
+              <td colspan="8" class="py-10 text-gray-400"><i class="fas fa-spinner fa-spin mr-2"></i>Loading...</td>
             </tr>
             <tr v-else-if="!filteredRegistrations.length" class="text-center">
-              <td colspan="7" class="py-10 text-gray-400">No registrations found.</td>
+              <td colspan="8" class="py-10 text-gray-400">No registrations found.</td>
             </tr>
             <tr v-for="reg in filteredRegistrations" :key="reg.id" class="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+              <td class="td">
+                <input
+                  type="checkbox"
+                  class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                  :checked="selectedRegistrationIds.includes(reg.id)"
+                  @change="toggleRegistrationSelection(reg.id)"
+                  :aria-label="`Select registration #${reg.id}`"
+                />
+              </td>
               <td class="td text-gray-500 text-sm">#{{ reg.id }}</td>
               <td class="td font-medium text-gray-800">{{ reg.full_name }}</td>
               <td class="td text-sm text-gray-600">{{ reg.email }}</td>
@@ -245,8 +271,10 @@ const search = ref('')
 
 const { data: sessionData } = await useFetch<{ loggedIn: boolean; role: string; username: string }>('/api/admin/session')
 const { data: registrations, pending, refresh: refreshRegs } = await useFetch<any[]>('/api/admin/registrations')
-const { data: messages, pending: msgPending } = await useFetch<any[]>('/api/admin/messages')
+const { data: messages, pending: msgPending } = await useFetch<any[]>('/api/admin/messages', { default: () => [] })
 const { data: admins, refresh: refreshAdmins } = await useFetch<any[]>('/api/admin/admins')
+
+const selectedRegistrationIds = ref<number[]>([])
 
 const filteredRegistrations = computed(() => {
   if (!registrations.value) return []
@@ -256,6 +284,58 @@ const filteredRegistrations = computed(() => {
     [r.full_name, r.email, r.course, r.phone].some(v => String(v).toLowerCase().includes(q))
   )
 })
+
+const visibleRegistrationIds = computed(() => filteredRegistrations.value.map(r => r.id))
+
+const allVisibleSelected = computed(() => {
+  const ids = visibleRegistrationIds.value
+  if (!ids.length) return false
+  return ids.every(id => selectedRegistrationIds.value.includes(id))
+})
+
+const someVisibleSelected = computed(() => {
+  const ids = visibleRegistrationIds.value
+  if (!ids.length) return false
+  return ids.some(id => selectedRegistrationIds.value.includes(id))
+})
+
+function toggleRegistrationSelection(id: number) {
+  const cur = selectedRegistrationIds.value
+  if (cur.includes(id)) {
+    selectedRegistrationIds.value = cur.filter(x => x !== id)
+  } else {
+    selectedRegistrationIds.value = [...cur, id]
+  }
+}
+
+function toggleSelectAllVisible() {
+  const visibleIds = visibleRegistrationIds.value
+  if (!visibleIds.length) return
+
+  if (allVisibleSelected.value) {
+    // unselect visible
+    selectedRegistrationIds.value = selectedRegistrationIds.value.filter(id => !visibleIds.includes(id))
+    return
+  }
+
+  // select visible (merge unique)
+  const next = new Set(selectedRegistrationIds.value)
+  for (const id of visibleIds) next.add(id)
+  selectedRegistrationIds.value = Array.from(next)
+}
+
+function exportSelectedPdf() {
+  if (!selectedRegistrationIds.value.length) {
+    alert('Select at least one registration to export.')
+    return
+  }
+
+  const ids = selectedRegistrationIds.value.join(',')
+  const url = `/api/admin/registrations/export/pdf?export_type=selected&selected_ids=${encodeURIComponent(ids)}`
+  if (process.client) {
+    window.location.href = url
+  }
+}
 
 const stats = computed(() => [
   { label: 'Total Registrations', value: registrations.value?.length ?? 0, icon: 'fas fa-user-graduate', bg: 'bg-brand-500' },
@@ -273,6 +353,7 @@ async function deleteReg(id: number) {
   if (!confirm(`Delete registration #${id}?`)) return
   await $fetch(`/api/admin/registrations/${id}`, { method: 'DELETE' })
   await refreshRegs()
+  selectedRegistrationIds.value = selectedRegistrationIds.value.filter(x => x !== id)
 }
 
 // Admin management
