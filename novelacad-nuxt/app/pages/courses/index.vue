@@ -51,13 +51,13 @@
 useHead({ title: 'Courses | Novel Academy' })
 
 const courses = [
-  { slug: 'solar-design-installation', name: 'Solar Design & Installation', img: 'solar install.png', desc: 'Master solar system design and installation with hands-on, industry-ready training.', duration: '6-24 Months' },
-  { slug: 'solarpreneurship', name: 'Solarpreneurship', img: 'solarprenuer.png', desc: 'Learn how to start, manage, and scale a profitable solar energy business.', duration: '6-24 Months' },
-  { slug: 'repair-maintenance', name: 'Repair & Maintenance', img: 'repair.png', desc: 'Gain practical skills to diagnose, repair, and maintain solar power systems.', duration: '6-24 Months' },
-  { slug: 'hse-management', name: 'HSE Management', img: 'hse.png', desc: 'Train in essential Health, Safety, and Environment standards for safe project operations.', duration: '6-24 Months' },
-  { slug: 'ai-robotics', name: 'AI & Robotics', img: 'robotics.png', desc: 'Build real AI and robotics solutions through practical, beginner-friendly projects.', duration: '6-24 Months' },
-  { slug: 'web-development', name: 'Web Development', img: 'webdev.png', desc: 'Design and build modern, responsive websites using industry-standard tools.', duration: '6-24 Months' },
-  { slug: 'app-development', name: 'App Development', img: 'app-dev.png', desc: 'Build beautiful, fast mobile apps using Flutter and Dart with hands-on projects.', duration: '6-24 Months' },
-  { slug: 'digital-marketing', name: 'Digital Marketing', img: 'digital.png', desc: 'Learn result-driven digital marketing skills to grow brands and businesses online.', duration: '6-24 Months' },
+  { slug: 'solar-design-installation', name: 'Solar Design & Installation', img: 'solar install.png', desc: 'Master solar system design and installation with hands-on, industry-ready training.', duration: '3-12 Months' },
+  { slug: 'solarpreneurship', name: 'Solarpreneurship', img: 'solarprenuer.png', desc: 'Learn how to start, manage, and scale a profitable solar energy business.', duration: '3-12 Months' },
+  { slug: 'repair-maintenance', name: 'Repair & Maintenance', img: 'repair.png', desc: 'Gain practical skills to diagnose, repair, and maintain solar power systems.', duration: '3-12 Months' },
+  { slug: 'hse-management', name: 'HSE Management', img: 'hse.png', desc: 'Train in essential Health, Safety, and Environment standards for safe project operations.', duration: '3-12 Months' },
+  { slug: 'research-automation', name: 'Research & Automation', img: 'robotics.png', desc: 'Learn to automate processes and conduct data-driven research using modern technological tools.', duration: '3-12 Months' },
+  { slug: 'web-development', name: 'Web Development', img: 'webdev.png', desc: 'Design and build modern, responsive websites using industry-standard tools.', duration: '3-12 Months' },
+  { slug: 'app-development', name: 'App Development', img: 'app-dev.png', desc: 'Build beautiful, fast mobile apps using Flutter and Dart with hands-on projects.', duration: '3-12 Months' },
+  { slug: 'digital-marketing', name: 'Digital Marketing', img: 'digital.png', desc: 'Learn result-driven digital marketing skills to grow brands and businesses online.', duration: '3-12 Months' },
 ]
 </script>

@@ -49,7 +49,7 @@
             <li><span class="text-gray-400">›</span> Solarpreneurship and Business Management</li>
             <li><span class="text-gray-400">›</span> Repair and maintenance</li>
             <li><span class="text-gray-400">›</span> HSE (Health, Safety, and Environment) Management</li>
-            <li><span class="text-gray-400">›</span> Practical Artificial intelligence and Robotics</li>
+            <li><span class="text-gray-400">›</span> Practical Research and Automation</li>
             <li><span class="text-gray-400">›</span> Digital Marketing</li>
             <li><span class="text-gray-400">›</span> Web design &amp; development</li>
           </ul>

@@ -160,7 +160,7 @@ export function registrationAdminHtml(siteUrl: string, data: {
   state: string
   educationLevel: string
 }): string {
-  const adminUrl = `${siteUrl}/admin/dashboard`
+  const adminUrl = `${siteUrl}/admin/login`
 
   const row = (label: string, value: string) => `
     <tr>

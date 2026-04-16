@@ -121,7 +121,7 @@
                 <option>Solarpreneurship and Business Management</option>
                 <option>Repair and Maintenance</option>
                 <option>HSE (Health, Safety, and Environment) Management</option>
-                <option>Artificial Intelligence and Robotics</option>
+                <option>Research and Automation</option>
                 <option>Web Design and Development</option>
                 <option>App Development</option>
                 <option>Digital Marketing</option>
@@ -245,9 +245,9 @@ const form = reactive({
 })
 
 const durations = [
-  { value: '6 Month Certificate Course', label: '6 Month Certificate' },
-  { value: '1 Year Associate Diploma', label: '1 Year Diploma' },
-  { value: '2 Year Diploma', label: '2 Year Diploma' },
+  { value: '3 Month Certificate Course', label: '3 Month Certificate' },
+  { value: '6 Month Associate Diploma', label: '6 Month Diploma' },
+  { value: '1 Year Diploma', label: '1 Year Diploma' },
 ]
 
 const honeypot1 = ref('')
