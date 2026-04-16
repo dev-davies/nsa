@@ -203,7 +203,7 @@
               <input type="text" name="website" style="position:absolute;left:-9999px;opacity:0;pointer-events:none" v-model="honeypot1" autocomplete="off" />
               <input type="text" name="email_confirm" style="position:absolute;left:-9999px;opacity:0;pointer-events:none" v-model="honeypot2" autocomplete="off" />
 
-              <div class="grid grid-cols-2 gap-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label class="form-label">Your Name *</label>
                   <input v-model="form.name" type="text" class="form-input" placeholder="John Doe" required />
