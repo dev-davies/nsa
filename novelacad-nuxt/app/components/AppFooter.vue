@@ -29,7 +29,7 @@
             </li>
             <li class="flex gap-3 items-center">
               <i class="fas fa-envelope text-gray-300"></i>
-              <a class="hover:text-white" href="mailto:info@novel-academy.com">info@novel-academy.com</a>
+              <a class="hover:text-white" href="mailto:info@novel-techtraining.com">info@novel-techtraining.com</a>
             </li>
           </ul>
 

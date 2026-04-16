@@ -9,9 +9,9 @@
             <span class="hidden sm:inline">+234 8113695917</span>
             <span class="sm:hidden">Call</span>
           </a>
-          <a href="mailto:info@novel-academy.com" class="hidden sm:inline-flex items-center gap-2 hover:text-white">
+          <a href="mailto:info@novel-techtraining.com" class="hidden sm:inline-flex items-center gap-2 hover:text-white">
             <i class="fas fa-envelope text-[10px]"></i>
-            <span>info@novel-academy.com</span>
+            <span>info@novel-techtraining.com</span>
           </a>
         </div>
         <div class="flex items-center gap-3 text-sm">

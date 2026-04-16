@@ -264,7 +264,7 @@ const features = [
 const contactInfo = [
   { icon: 'fas fa-map-marker-alt', bg: 'bg-brand-500', label: 'Our Location', value: '76, Adekunle Fajuyi Road Ibadan.<br>Opposite Gate 3, Adamasingba Stadium, Oyo State' },
   { icon: 'fas fa-phone-alt', bg: 'bg-green-600', label: 'Call Us', value: '+234 811 369 5917' },
-  { icon: 'fas fa-envelope', bg: 'bg-amber-500', label: 'Email Us', value: 'info@novel-academy.com' },
+  { icon: 'fas fa-envelope', bg: 'bg-amber-500', label: 'Email Us', value: 'info@novel-techtraining.com' },
 ]
 
 function goToCourse() {
