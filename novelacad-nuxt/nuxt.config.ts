@@ -13,6 +13,7 @@ export default defineNuxtConfig({
     dbPath: process.env.DB_PATH,
     tursoUrl: process.env.DATABASE_URL,
     tursoToken: process.env.DATABASE_TOKEN,
+    siteUrl: process.env.SITE_URL || 'https://novel-academy.com',
     mailHost: process.env.MAIL_SERVER || 'smtp.gmail.com',
     mailPort: process.env.MAIL_PORT || '587',
     mailUser: process.env.MAIL_USERNAME || '',

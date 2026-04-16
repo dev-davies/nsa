@@ -27,13 +27,9 @@
               <i class="fas fa-phone-alt text-gray-300"></i>
               <a class="hover:text-white" href="tel:+2348113695917">+2348113695917</a>
             </li>
-            <li class="flex gap-3 items-start">
-              <i class="fas fa-envelope text-gray-300 mt-1"></i>
-              <span>
-                <a class="hover:text-white" href="mailto:novelsolaracademy@gmail.com">novelsolaracademy@gmail.com</a>
-                <span class="text-gray-500 mx-1">|</span>
-                <a class="hover:text-white" href="mailto:info@novel-academy.com">info@novel-academy.com</a>
-              </span>
+            <li class="flex gap-3 items-center">
+              <i class="fas fa-envelope text-gray-300"></i>
+              <a class="hover:text-white" href="mailto:info@novel-academy.com">info@novel-academy.com</a>
             </li>
           </ul>
 

@@ -6,10 +6,11 @@ function getTransporter() {
   if (transporter) return transporter
 
   const config = useRuntimeConfig()
+  const port = parseInt(config.mailPort as string)
   transporter = nodemailer.createTransport({
     host: config.mailHost as string,
-    port: parseInt(config.mailPort as string),
-    secure: false,
+    port,
+    secure: port === 465,
     auth: {
       user: config.mailUser as string,
       pass: config.mailPass as string,

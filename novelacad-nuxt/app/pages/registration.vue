@@ -10,14 +10,7 @@
         <p class="text-gray-500">Join Novel Academy and start your journey towards a cleaner future</p>
       </div>
 
-      <!-- Alerts -->
-      <div v-if="successMsg" class="mb-6 p-4 bg-green-50 border border-green-200 rounded-2xl text-green-700 flex items-start gap-3">
-        <i class="fas fa-check-circle text-green-500 mt-0.5 text-lg flex-shrink-0"></i>
-        <div>
-          <p class="font-bold">Application Submitted!</p>
-          <p class="text-sm mt-0.5">{{ successMsg }}</p>
-        </div>
-      </div>
+      <!-- Error Alert (kept inline) -->
       <div v-if="errorMsg" class="mb-6 p-4 bg-red-50 border border-red-200 rounded-2xl text-red-700 flex items-start gap-3">
         <i class="fas fa-exclamation-circle text-red-500 mt-0.5 text-lg flex-shrink-0"></i>
         <div>
@@ -203,6 +196,41 @@
         </div>
       </form>
     </div>
+
+    <!-- Success Modal Overlay -->
+    <Teleport to="body">
+      <Transition name="modal">
+        <div v-if="showSuccessModal" class="fixed inset-0 z-[9999] flex items-center justify-center p-4" @click.self="closeSuccessModal">
+          <!-- Backdrop -->
+          <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+          <!-- Modal Card -->
+          <div class="relative bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 text-center animate-modal-in">
+            <!-- Close button -->
+            <button @click="closeSuccessModal" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors" aria-label="Close">
+              <i class="fas fa-times text-lg"></i>
+            </button>
+
+            <!-- Animated Checkmark -->
+            <div class="mx-auto mb-6 w-20 h-20 rounded-full bg-green-100 flex items-center justify-center animate-check-bounce">
+              <svg class="w-10 h-10 text-green-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <path class="animate-check-draw" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+
+            <!-- Message -->
+            <h3 class="text-2xl font-heading font-bold text-gray-800 mb-2">Registration Successful!</h3>
+            <p class="text-gray-500 mb-8 leading-relaxed">
+              Thank you for registering with Novel Academy! We've received your application and will get back to you shortly.
+            </p>
+
+            <!-- Action Button -->
+            <button @click="closeSuccessModal" class="w-full py-3.5 px-6 bg-brand-500 text-white font-semibold rounded-2xl hover:bg-brand-600 transition-colors shadow-lg shadow-brand-500/25">
+              <i class="fas fa-thumbs-up mr-2"></i>Got it!
+            </button>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
@@ -228,6 +256,7 @@ const formStartTime = ref(Date.now() / 1000)
 const isSubmitting = ref(false)
 const successMsg = ref('')
 const errorMsg = ref('')
+const showSuccessModal = ref(false)
 
 function resetForm() {
   Object.assign(form, { fullName: '', email: '', dob: '', phoneNumber: '', sex: '', nationality: '', state: '', address: '', educationLevel: '', qualification: '', course: '', duration: '', courseGoals: '', experience: '', infoSource: '', terms: false })
@@ -236,6 +265,10 @@ function resetForm() {
   formStartTime.value = Date.now() / 1000
   successMsg.value = ''
   errorMsg.value = ''
+}
+
+function closeSuccessModal() {
+  showSuccessModal.value = false
 }
 
 async function submitRegistration() {
@@ -252,13 +285,75 @@ async function submitRegistration() {
         _form_start_time: formStartTime.value,
       }
     })
-    successMsg.value = 'Your application has been received! We\'ll be in touch soon.'
     resetForm()
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    showSuccessModal.value = true
   } catch (e: any) {
     errorMsg.value = e?.data?.statusMessage || e?.data?.message || 'An error occurred. Please try again.'
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   } finally {
     isSubmitting.value = false
   }
 }
 </script>
+
+<style scoped>
+/* Modal transition */
+.modal-enter-active,
+.modal-leave-active {
+  transition: opacity 0.3s ease;
+}
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+}
+
+/* Modal card pop-in animation */
+@keyframes modalIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.85) translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+.animate-modal-in {
+  animation: modalIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Checkmark bounce */
+@keyframes checkBounce {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.animate-check-bounce {
+  animation: checkBounce 0.5s 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  opacity: 0;
+}
+
+/* Checkmark SVG draw */
+@keyframes checkDraw {
+  0% {
+    stroke-dashoffset: 24;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+.animate-check-draw {
+  stroke-dasharray: 24;
+  stroke-dashoffset: 24;
+  animation: checkDraw 0.4s 0.5s ease-out forwards;
+}
+</style>
+

@@ -34,14 +34,17 @@ export default defineEventHandler(async (event) => {
     ]
   })
 
+  const config = useRuntimeConfig()
+  const siteUrl = config.siteUrl as string
+  const firstName = String(body.fullName).split(' ')[0]
+
   // Send applicant confirmation email
-  const nameParts = String(body.fullName).split(' ')
-  const firstName = nameParts[0]
   try {
     await sendMail({
       to: body.email,
-      subject: 'Novel Academy: Application Received',
-      text: `Hi ${firstName},\n\nThank you for submitting your details to Novel Academy. We have successfully received your application.\n\nOur team will review your information shortly and will be in touch soon to outline the next steps.\n\nBest regards,\nThe Novel Academy Team`,
+      subject: 'Novel Academy: Application Received ✅',
+      text: `Hi ${firstName},\n\nThank you for applying to Novel Academy for the ${body.course} programme. Our team will be in touch with you shortly.\n\nBest regards,\nThe Novel Academy Team`,
+      html: registrationConfirmationHtml(siteUrl, firstName, body.course),
     })
   } catch (e) {
     console.error('[Mailer] Failed to send applicant confirmation:', e)
@@ -49,11 +52,19 @@ export default defineEventHandler(async (event) => {
 
   // Send admin notification email
   try {
-    const config = useRuntimeConfig()
     await sendMail({
       to: config.mailFrom as string,
-      subject: `New Registration: ${body.fullName}`,
-      text: `A new application has been submitted by ${body.fullName} for the ${body.course} course. Please log in to the admin dashboard to view the full details.`,
+      subject: `New Registration: ${body.fullName} — ${body.course}`,
+      text: `A new application has been submitted by ${body.fullName} (${body.email}) for the ${body.course} course. Log in to the admin dashboard to review.`,
+      html: registrationAdminHtml(siteUrl, {
+        fullName: body.fullName,
+        email: body.email,
+        phone: body.phoneNumber,
+        course: body.course,
+        nationality: body.nationality,
+        state: body.state,
+        educationLevel: body.educationLevel,
+      }),
     })
   } catch (e) {
     console.error('[Mailer] Failed to send admin notification:', e)
@@ -61,3 +72,4 @@ export default defineEventHandler(async (event) => {
 
   return { status: 'success', message: 'Registration received', redirect: '/thank-you' }
 })
+

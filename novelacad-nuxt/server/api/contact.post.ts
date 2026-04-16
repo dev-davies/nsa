@@ -18,14 +18,15 @@ export default defineEventHandler(async (event) => {
     args: [name, email, subject || '', message]
   })
 
-  // Send notification email (non-blocking failure)
+  // Send notification email to admin (non-blocking failure)
   try {
     const config = useRuntimeConfig()
-    const adminEmail = config.mailFrom as string
+    const siteUrl = config.siteUrl as string
     await sendMail({
-      to: adminEmail,
-      subject: `New Contact Message from ${name}`,
+      to: config.mailFrom as string,
+      subject: `New Contact Message: ${subject || 'No Subject'} — from ${name}`,
       text: `Name: ${name}\nEmail: ${email}\nSubject: ${subject || 'N/A'}\n\nMessage:\n${message}`,
+      html: contactAdminHtml(siteUrl, { name, email, subject: subject || '', message }),
     })
   } catch (e) {
     console.error('[Mailer] Failed to send contact notification:', e)
@@ -33,3 +34,4 @@ export default defineEventHandler(async (event) => {
 
   return { status: 'success', message: 'Your message has been sent successfully!' }
 })
+
