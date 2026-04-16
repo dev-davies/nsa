@@ -133,9 +133,14 @@
               <td class="td text-sm text-gray-600 max-w-xs truncate">{{ msg.subject || '(No subject)' }}</td>
               <td class="td text-sm text-gray-500">{{ formatDate(msg.submitted_at) }}</td>
               <td class="td">
-                <button @click="viewMessage(msg)" class="p-1.5 text-brand-500 hover:bg-brand-50 rounded-lg transition-colors" title="View Message">
-                  <i class="fas fa-eye text-sm"></i>
-                </button>
+                <div class="flex items-center gap-2">
+                  <button @click="viewMessage(msg)" class="p-1.5 text-brand-500 hover:bg-brand-50 rounded-lg transition-colors" title="View Message">
+                    <i class="fas fa-eye text-sm"></i>
+                  </button>
+                  <button @click="deleteMessage(msg.id)" class="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
+                    <i class="fas fa-trash text-sm"></i>
+                  </button>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -271,7 +276,7 @@ const search = ref('')
 
 const { data: sessionData } = await useFetch<{ loggedIn: boolean; role: string; username: string }>('/api/admin/session')
 const { data: registrations, pending, refresh: refreshRegs } = await useFetch<any[]>('/api/admin/registrations')
-const { data: messages, pending: msgPending } = await useFetch<any[]>('/api/admin/messages', { default: () => [] })
+const { data: messages, pending: msgPending, refresh: refreshMessages } = await useFetch<any[]>('/api/admin/messages', { default: () => [] })
 const { data: admins, refresh: refreshAdmins } = await useFetch<any[]>('/api/admin/admins')
 
 const selectedRegistrationIds = ref<number[]>([])
@@ -354,6 +359,12 @@ async function deleteReg(id: number) {
   await $fetch(`/api/admin/registrations/${id}`, { method: 'DELETE' })
   await refreshRegs()
   selectedRegistrationIds.value = selectedRegistrationIds.value.filter(x => x !== id)
+}
+
+async function deleteMessage(id: number) {
+  if (!confirm(`Delete message #${id}?`)) return
+  await $fetch(`/api/admin/messages/${id}`, { method: 'DELETE' })
+  await refreshMessages()
 }
 
 // Admin management
